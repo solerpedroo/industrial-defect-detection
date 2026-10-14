@@ -110,3 +110,32 @@ chat context; implementation details belong in task cards.
   presence signal, not an integrity certificate.
 - **Scope:** No new endpoint, dependency, tensor preprocessing, or model. The
   existing typed summary and dataset view change with the API contract.
+
+## ADR-009 — Recorded preprocessing shared across stages
+
+- **Status:** accepted
+- **Date:** 2026-10-14
+- **Decision:** Wave 2 provides one `apply_preprocess` function in `ml/` for
+  train, validation, test and inference. Canonical input is RGB HWC `uint8`
+  in [0, 255]; output is contiguous CHW `float32`, using `(pixel / 255 - mean)
+  divided by std per channel. Output is not bounded to [0, 1]. Spatial size and
+  normalization are loaded from `training_defaults.yaml`, without copied numeric
+  defaults in Python. PyTorch conversion remains a Wave 3 model-boundary concern.
+- **Geometry:** Images resize to the configured square with Pillow bilinear
+  resampling. Optional grayscale uses Pillow L conversion, replicated to RGB
+  before per-channel normalization. Binary H×W uint8 0/255 masks resize with
+  nearest-neighbor sampling and follow exactly the image's horizontal flip.
+- **Augmentation:** Only train may use horizontal flipping. It must be explicitly
+  permitted in the canonical category entry and enabled by experiment probability.
+  Every initial category denies it until its orientation assumptions are reviewed.
+  Enabled train augmentation requires an explicit integer seed; local RNG draws
+  do not change global randomness. Later training loops must supply per-sample,
+  per-epoch seeds. Validation/test/inference stay deterministic and unaugmented.
+- **Provenance:** Each result records effective configuration, versioned config
+  SHA-256, source/output shapes, stage, seed, sampled decisions, operations and
+  NumPy/Pillow versions as JSON-safe metadata. Before/after previews use display
+  RGB pixels, not the normalized model array. Inputs are never modified.
+- **Boundary:** The user explicitly authorized Wave 2 while the real-MVTec
+  acceptance gate is open. Synthetic evidence may complete engineering work;
+  real-data preparation and actual model consumers remain unverified until their
+  own gates. No new package, HTTP route, training loop or model readiness change.
