@@ -13,7 +13,7 @@ Wave 2 engineering is implemented and reviewed: the full Python suite has
 121 passing tests, including 49 preprocessing cases. The user authorized this
 synthetic-data continuation while real-MVTec preparation remains open. A shared
 stage-aware function and upload-decoder compatibility are verified. Wave 3 now
-adds Autoencoder consumers; full integration still awaits PatchCore and HTTP
+adds Autoencoder consumers and Wave 4 adds PatchCore; full integration still awaits HTTP
 serving. See [`Wave 2 evidence`](agentic/tasks/wave-2-preprocessing.md).
 
 Wave 3 integrates the shared pipeline into offline Autoencoder fitting and
@@ -23,14 +23,23 @@ and reconstruction maps. Evidence is synthetic CPU only; real-MVTec preparation,
 CUDA and API serving remain open. Both model catalog entries remain `planned`.
 See [`Wave 3 evidence`](agentic/tasks/wave-3-autoencoder.md).
 
+Wave 4 implements frozen ResNet-18 PatchCore memory, seeded coreset selection,
+trusted self-contained offline reload and a common score/map interface. The full
+Python suite has 213 passing tests, including 43 PatchCore cases with the opt-in
+actual pretrained smoke enabled. The smoke uses synthetic images, not MVTec.
+Independent review found no blockers; upstream warnings remain visible. Raw
+distances are not calibrated or comparable to Autoencoder MSE. Real-data, CUDA,
+thresholds and HTTP readiness remain open. See
+[`Wave 4 evidence`](agentic/tasks/wave-4-patchcore.md).
+
 | Criterion | Wave | Status |
 | --- | --- | --- |
 | Monorepo, catalogs, API shell, dashboard shell, CI | 0 | done |
 | Bottle, Leather, and Metal Nut prepared locally | 1 | open |
 | Train, validation, and official test isolated | 1 | open |
-| Recorded preprocessing shared by train and inference | 2 | Autoencoder integrated; PatchCore/HTTP pending |
+| Recorded preprocessing shared by train and inference | 2 | Both offline models integrated; HTTP pending |
 | Autoencoder trains and writes reconstruction maps | 3 | implemented; real-data acceptance open |
-| PatchCore builds a memory and writes anomaly maps | 4 | open |
+| PatchCore builds a memory and writes anomaly maps | 4 | implemented; real-data acceptance open |
 | Image-level and pixel-level metrics | 5 | open |
 | Thresholds chosen without the official test split | 5 | open |
 | UI loads an image and a compatible model | 6 | open |
