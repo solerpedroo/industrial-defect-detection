@@ -275,3 +275,47 @@ chat context; implementation details belong in task cards.
 - **References:** [ROC AUC](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.roc_auc_score.html),
   [average precision](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.average_precision_score.html),
   [Anomalib metric definitions](https://anomalib.readthedocs.io/en/lib-v2.7.0/markdown/guides/reference/metrics/index.html).
+
+## ADR-013 — Calibration-bound ephemeral inference
+
+- **Status:** accepted
+- **Date:** 2026-10-14
+- **Scope:** Wave 6 upload-to-result slice using existing endpoints/libraries.
+  Keep FastAPI/Next.js deployment; no new service, training endpoint or dependency.
+- **Readiness:** `INFERENCE_MANIFEST` optionally points to an operator-owned local
+  JSON manifest with explicit trusted root, device and category/model checkpoint
+  and Wave 5 `calibration.json` paths. Reject unsafe paths, hashes, mismatched
+  config/preprocessing/normal split/validation membership or quantile conventions.
+  Load/freeze/cache/warm predictors once at startup; serialize prediction use.
+  Default catalog YAML stays `planned`; API overlays `ready` only for validated
+  installed categories, with `ready_categories` and `synthetic_categories`.
+  Invalid configured serving fails startup; uninstalled pairs retain 501.
+- **Calibration:** Serve frozen normal-validation thresholds only, strict `>`.
+  Startup may read trusted artifacts/provenance, never dataset/test pixels, train
+  or recalibrate. A Wave 5 frozen calibration is sufficient independently of a
+  completed test report. Bind its bytes/hash and recorded model/source/config.
+  Synthetic calibrations require `INFERENCE_ALLOW_SYNTHETIC=1`; mark response/UI
+  as synthetic demonstration, never industrial readiness. Real-data/CUDA gates
+  remain open even though the HTTP engineering path is implemented.
+- **Transport:** Preserve upload checks; bound application reads to limit+1,
+  close UploadFile on every path and keep payload/results request-scoped. Multipart
+  infrastructure may spool temporary bytes; no application persistence/logging.
+  A pre-parse ASGI envelope bounds inference bodies to 10 MiB plus 64 KiB of
+  multipart overhead, including chunked requests, before FastAPI parses files.
+  Offload blocking prediction/PNG work from async handlers. Optional model extras
+  import only when configured. Health/catalog errors expose no host paths.
+- **Geometry/display:** All output PNGs share the recorded model square (not
+  original localization). Return prepared RGB, raw-distance heatmap, 50% overlay,
+  binary pixel mask and optional reconstruction as base64 PNG, never raw tensors.
+  Heat color uses fixed [0,2*pixel_threshold] per installed calibration, not
+  upload min/max; zero threshold uses a zero/nonzero display convention. Color
+  saturation is display-only. No boxes or physical severity claim.
+- **Timing/UI:** `inference_ms` is synchronized prediction/preprocessing only,
+  excluding upload decode and PNG encode; request_ms includes queue/transport work
+  before JSON serialization. UI submits explicitly, clears results on input
+  changes/failure and aborts/ignores obsolete responses. Opacity is client-only;
+  PNG downloads use current ephemeral response, with clear resolution and
+  calibration/score-scale limitations. No saved-experiment dashboard in this wave.
+- **References:** [FastAPI lifespan](https://fastapi.tiangolo.com/advanced/events/),
+  [lifespan testing](https://fastapi.tiangolo.com/advanced/testing-events/),
+  [Starlette thread pool](https://www.starlette.io/threadpool/).
