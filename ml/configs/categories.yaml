@@ -11,11 +11,18 @@ categories:
     name: Bottle
     kind: object
     purpose: Detect changes on objects with defined geometry
+    preprocessing:
+      # Orientation invariance has not been established for this category.
+      allow_horizontal_flip: false
   - id: leather
     name: Leather
     kind: texture
     purpose: Identify defects on textures and continuous surfaces
+    preprocessing:
+      allow_horizontal_flip: false
   - id: metal_nut
     name: Metal Nut
     kind: object
     purpose: Investigate anomalies on metal parts
+    preprocessing:
+      allow_horizontal_flip: false
