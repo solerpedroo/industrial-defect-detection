@@ -1,15 +1,17 @@
-"""Convolutional autoencoder.
+"""Normal-only convolutional autoencoder, trusted reload and reconstruction maps.
 
-Wave 3 replaces this module with a PyTorch encoder-decoder trained on normal
-images with Adam and MSE. Early stopping uses the normal validation split.
+Offline fitting is ml.training.autoencoder.train_autoencoder. API serving remains
+planned. RGB input uses [0,1]; scores are mean squared reconstruction error.
 """
 
+from .checkpoint import load_autoencoder
+from .network import ConvolutionalAutoencoder, reconstruction_error
+from .prediction import AutoencoderPredictor, ReconstructionPrediction
 
-def train(*_args: object, **_kwargs: object) -> None:
-    """Train the autoencoder. Not available in Wave 0."""
-    raise NotImplementedError("Autoencoder training is implemented in Wave 3.")
-
-
-def reconstruction_error(*_args: object, **_kwargs: object) -> None:
-    """Build a reconstruction error map. Not available in Wave 0."""
-    raise NotImplementedError("Reconstruction maps are implemented in Wave 3.")
+__all__ = [
+    "AutoencoderPredictor",
+    "ConvolutionalAutoencoder",
+    "ReconstructionPrediction",
+    "load_autoencoder",
+    "reconstruction_error",
+]
