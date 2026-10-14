@@ -114,6 +114,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="industrial-inference-e2e-") as directory:
         prepared = prepare_serving(Path(directory))
+        if report_path := os.environ.get("PLAYWRIGHT_REPORT_PATH"):
+            # Browser tests import an actual completed Wave 5 report locally.
+            destination = Path(report_path)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes((prepared.root / "evaluation/results.json").read_bytes())
         os.environ["INFERENCE_MANIFEST"] = str(prepared.manifest)
         os.environ["INFERENCE_ALLOW_SYNTHETIC"] = "1"
         os.environ["ALLOWED_ORIGINS"] = os.environ.get(
