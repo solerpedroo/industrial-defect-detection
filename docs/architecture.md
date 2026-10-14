@@ -373,6 +373,26 @@ and formula prefixes neutralized. No dependency, endpoint or persistence was add
 Actual tiny synthetic evaluation reports and real-model API results exercise both
 browser paths. Real-data scientific acceptance remains open (ADR-014).
 
+## Wave 8 reports
+
+ADR-015 adds an offline package writer in `ml/experiments/render.py` and
+`scripts/render_report.py`. A package is `report.md`, `results.json`,
+`results.csv` and, when recorded image AUROC values exist, `image_auroc.png`.
+`GET /api/reports/{id}` returns the markdown and PNG filenames from
+`REPORTS_ROOT` (default `sample_outputs/`). It does not train or score.
+
+Experiment B (`ml/experiments/robustness.py`) copies each base image, applies
+the recorded noise, blur and brightness grid plus an original reference, and
+scores every condition with thresholds copied from a completed experiment A
+report. Degraded pixels are not written to the dataset. Experiment C
+(`ml/experiments/subsets.py`) records seeded 25/50/75/100 percent draws of
+normal train ids. Those draws are not fit manifests: the split loader still
+requires the full normal inventory, so the report states that retraining is
+blocked and does not invent AUROC.
+
+Packages always say that scores and mask area are not physical severity.
+Missing measurements use an explicit blocked section.
+
 ## What each wave adds
 
 | Wave | Addition |
@@ -384,5 +404,5 @@ browser paths. Real-data scientific acceptance remains open (ADR-014).
 | 5 | Implemented exact metrics, normal-validation thresholds and offline JSON/CSV experiment A; real-MVTec benchmark pending |
 | 6 | Implemented trusted calibrated HTTP serving, heatmap/overlay/mask/reconstruction and downloads; synthetic real-model browser evidence |
 | 7 | Implemented same-upload model comparison and local saved metrics/category filter/CSV; synthetic browser evidence |
-| 8 | Report export and experiments B and C |
+| 8 | Report packages, frozen-threshold experiment B scoring, and an experiment C membership plan; subset retraining blocked |
 | 9 | Deploy, demo, acceptance evidence |
