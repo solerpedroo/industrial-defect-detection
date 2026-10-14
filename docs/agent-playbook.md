@@ -32,7 +32,7 @@ Parallelize independent model packages and tests only after the Planner assigns 
 | 3 | done (engineering; real-data/API pending) | `wave-3-autoencoder.md` | 2026-10-14 |
 | 4 | done (engineering; real-data/CUDA/API pending) | `wave-4-patchcore.md` | 2026-10-14 |
 | 5 | done (engineering; real-MVTec/CUDA/API pending) | `wave-5-evaluation.md` | 2026-10-14 |
-| 6 | proposed | `wave-6-inference-ui.md` | — |
+| 6 | done (engineering; real-data/CUDA pending) | `wave-6-inference-ui.md` | 2026-10-14 |
 | 7 | proposed | `wave-7-comparison.md` | — |
 | 8 | proposed | `wave-8-reports.md` | — |
 | 9 | proposed | `wave-9-ship.md` | — |
