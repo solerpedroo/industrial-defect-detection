@@ -10,7 +10,7 @@
 | 5 | `tasks/wave-5-evaluation.md` | done (engineering) | Codex; independently reviewed; 281 tests pass including pretrained smoke; 68 evaluation cases; synthetic three-category experiment A; real-data/CUDA/API gates open; one file per commit |
 | 6 | `tasks/wave-6-inference-ui.md` | done (engineering) | Codex; independently reviewed; 319 Python / 4 frontend / 3 browser tests pass; calibration-bound cached serving and ephemeral PNG UI; real-data/CUDA gates open; one file per commit |
 | 7 | `tasks/wave-7-comparison.md` | done (engineering) | Codex; independently reviewed; 31 frontend / 7 browser / 38 targeted API tests pass; same-upload maps and local saved metrics/category filter/CSV; real-data/CUDA open; one file per commit |
-| 8 | `tasks/wave-8-reports.md` | proposed | Reports plus experiments B and C |
+| 8 | `tasks/wave-8-reports.md` | done (engineering) | Report packages, frozen-threshold experiment B, experiment C plan blocked on manifest contract |
 | 9 | `tasks/wave-9-ship.md` | proposed | README, demo, deploy |
 
-**Last reviewed:** 2026-10-14 — Wave 0 complete. MVP acceptance remains open.
+**Last reviewed:** 2026-10-14 — Wave 8 engineering complete. Real-data and CUDA gates remain open.
