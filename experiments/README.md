@@ -1,7 +1,9 @@
 # Scientific protocols
 
-These directories record how experiments A, B, and C will be run. They do not
-contain measured results yet.
+These directories record how experiments A, B, and C are run. Measured files
+are produced by the commands in the repository README and stay gitignored.
+Experiment C records subset membership; retraining those subsets is blocked by
+the split-manifest contract.
 
 | Protocol | Question | Config |
 | --- | --- | --- |
