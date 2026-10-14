@@ -1,4 +1,4 @@
-# API contract — Wave 1 dataset extension
+# API contract — Wave 6 calibrated inspection
 
 Base URL in local development: `http://localhost:8000`. The frontend reads `NEXT_PUBLIC_API_URL`.
 
@@ -71,13 +71,20 @@ Same category object as one entry above. Unknown ids return `404`.
       "family": "reconstruction",
       "status": "planned",
       "backbone": null,
-      "description": "Reconstruction model trained on normal images only."
+      "description": "Reconstruction model trained on normal images only.",
+      "ready_categories": [],
+      "synthetic_categories": []
     }
   ]
 }
 ```
 
-`status` is `planned` or `ready`. Wave 0 has no `ready` model.
+`status` is `planned` or `ready`. Without an installed serving manifest all models
+remain `planned`. Startup-validated artifacts make a model `ready` for its
+`ready_categories` only; another category can still return `501`.
+`synthetic_categories` flags demonstration-only installations that require an
+explicit server opt-in. Catalog IDs/descriptions remain YAML-owned. Neither
+readiness nor a response claims real-data/CUDA acceptance.
 
 ## `GET /api/experiments`
 
@@ -95,29 +102,67 @@ Multipart fields:
 - `category_id` — a catalog category;
 - `model_id` — a catalog model.
 
-Unknown category or model: `422`. Bad image: `400`, `413`, or `415`. Valid input for a `planned` model: `501` with a detail string. The body is not stored.
+Unknown category or model: `422`. Bad image: `400`, `413`, or `415`. An uninstalled
+category/model pair returns `501` with a detail string. Internal prediction/render
+failure returns a sanitized `503`. The pre-parse multipart envelope is 10 MiB
+plus 64 KiB overhead, including chunked uploads; exceeding it returns `413`.
+Application payloads/results are not persisted or logged. Framework temporary
+multipart spools close on every handled request path.
 
-When a later wave implements inference, the JSON body will be:
+An installed, calibrated pair returns:
 
 ```json
 {
   "model_id": "autoencoder",
   "category_id": "bottle",
-  "score": 0.0,
-  "label": "anomalous",
-  "threshold": 0.0,
+  "score": 0.05,
+  "label": "normal",
+  "threshold": 0.1,
+  "pixel_threshold": 0.1,
+  "input_png": "<base64 PNG>",
   "anomaly_map_png": "<base64 PNG>",
   "overlay_png": "<base64 PNG>",
+  "mask_png": "<base64 PNG>",
+  "reconstruction_png": "<base64 PNG or null>",
+  "display_max": 0.2,
+  "map_width": 256,
+  "map_height": 256,
+  "data_kind": "mvtec_ad",
+  "artifact_sha256": "<SHA-256>",
+  "calibration_sha256": "<SHA-256>",
+  "config_hash": "<model configuration SHA-256>",
   "inference_ms": 0.0,
   "request_ms": 0.0
 }
 ```
 
-`label` depends on a threshold chosen on validation data. `score` is not a physical severity.
+`label` is `anomalous` exactly when raw `score > threshold`, otherwise `normal`.
+The image threshold and pixel threshold come only from frozen normal-validation
+calibration tied to the installed artifact/preprocessing/source/config. The mask
+is a single-channel PNG of 0/255 from raw map `> pixel_threshold`; equality is
+normal. Scores/maps have model-family-specific scales, not severity/probability.
+
+All PNGs share model-resolution geometry, not original-image coordinates.
+`input_png` is prepared display RGB. Autoencoder optionally supplies reconstruction;
+PatchCore returns null. Heat colors have fixed [0,`display_max`] range, where max
+is twice the frozen pixel threshold; zero threshold uses zero/nonzero intensity.
+`overlay_png` blends prepared input and heat 50/50; UI opacity is client-side.
+PNG download data URLs can be assembled from base64 without another API endpoint.
+
+`inference_ms` measures synchronized cached prediction/preprocessing, excludes
+image decode/PNG encode/queue waiting. `request_ms` includes decode, queued work
+and rendering before response JSON serialization/network transfer. No checkpoint
+load, calibration, dataset/test read or training occurs in a request. IDs/hashes
+are exposed, never host paths or raw tensor values. `data_kind=synthetic` requires
+server opt-in and must be visibly described as a demonstration.
 
 ## `POST /api/inference/compare`
 
-Multipart fields: `image`, `category_id`, `model_a`, `model_b`. The two model ids must differ. Wave 0 returns the same validation errors, or `501` when both ids exist.
+Multipart fields: `image`, `category_id`, `model_a`, `model_b`. The two model IDs
+must differ (`422` otherwise). Both category/model pairs must be installed (`501`
+otherwise), checked before scoring either. The same decoded upload is used for
+both; response is `{category_id, results: [InferenceResponse, InferenceResponse],
+request_ms}`. This is ephemeral transport, not Wave 7's saved-experiment dashboard.
 
 ## `GET /api/reports/{experiment_id}`
 
