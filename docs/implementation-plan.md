@@ -1,7 +1,7 @@
 # Industrial Defect Detection — Implementation Plan
 
 **Version:** 1.0  
-**Status:** Waves 1–8 engineering delivered; real-data, CUDA and protocol C retrain gates open → MVP
+**Status:** Waves 1–9 engineering delivered; real-data, CUDA and protocol C retrain gates open → MVP
 **Scope reference:** [project-scope.md](./project-scope.md)
 
 ---
@@ -44,6 +44,9 @@ metrics/category filtering/CSV under ADR-014, with synthetic engineering evidenc
 Wave 8 writes Markdown/CSV/JSON/PNG packages, scores experiment B at frozen
 experiment A thresholds, and records experiment C subset membership without
 retraining. Real-data and CUDA gates remain open. See ADR-015.
+Wave 9 documents reproduction, a dataset-free deploy path, and the acceptance
+table. It does not close the real-data, CUDA, or protocol C retrain gates.
+See ADR-016.
 
 ```mermaid
 flowchart LR
