@@ -6,6 +6,9 @@ const repoRoot = path.join(__dirname, "..");
 const pythonBin = process.env.PLAYWRIGHT_PYTHON ?? path.join(repoRoot, ".venv/bin/python");
 const apiUrl = process.env.PLAYWRIGHT_API_URL ?? "http://127.0.0.1:8000";
 const webUrl = process.env.PLAYWRIGHT_WEB_URL ?? "http://localhost:3000";
+const apiPort = new URL(apiUrl).port || "8000";
+const webPort = new URL(webUrl).port || "3000";
+const realInference = process.env.PLAYWRIGHT_REAL_INFERENCE !== "0";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -20,14 +23,17 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: `"${pythonBin}" -m uvicorn app.main:app --app-dir "${repoRoot}/backend" --host 127.0.0.1 --port 8000`,
+      command: realInference
+        ? `"${pythonBin}" "${repoRoot}/backend/tests/inference_fixture.py" --port ${apiPort}`
+        : `"${pythonBin}" -m uvicorn app.main:app --app-dir "${repoRoot}/backend" --host 127.0.0.1 --port ${apiPort}`,
       url: `${apiUrl}/api/health`,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: !realInference && !process.env.CI,
       cwd: __dirname,
       timeout: 120_000,
     },
     {
-      command: "npm run dev -- --port 3000",
+      command: process.env.PLAYWRIGHT_PRODUCTION === "1"
+        ? `npm run start -- --port ${webPort}` : `npm run dev -- --port ${webPort}`,
       url: webUrl,
       reuseExistingServer: !process.env.CI,
       cwd: __dirname,
