@@ -23,3 +23,27 @@ Validate a local copy with:
 ```bash
 .venv/bin/python scripts/validate_dataset.py
 ```
+
+The audit exits with status 1 for missing categories, unreadable images, invalid
+mask associations, duplicate train/test content or stale manifests. It reports
+problems without changing source files. Tests use tiny synthetic images only.
+
+After a successful audit, explicitly hold out normal training images:
+
+```bash
+.venv/bin/python scripts/validate_dataset.py --create-split --validation-fraction 0.2
+```
+
+The fraction is an explicit experiment choice. The seed defaults to the canonical
+`ml/configs/training_defaults.yaml` value. Manifests live at
+`ml/data/splits/<category>.json`, outside Git. Add `--overwrite` only when you
+intend to replace an existing split. Keep the data unchanged during experiments.
+
+For an external copy or a single-category inspection:
+
+```bash
+.venv/bin/python scripts/validate_dataset.py --dataset-root /path/to/mvtec-ad --category bottle --json
+```
+
+External-root manifests are for offline use; the web API reads the repository
+copy at `data/mvtec-ad/`. No dataset download or redistribution is automated.
