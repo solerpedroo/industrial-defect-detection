@@ -9,3 +9,8 @@ models:
   - patchcore
 image_size: 256
 split_policy: validation thresholds, then a single official test report
+target_image_fpr: 0.05
+target_pixel_fpr: 0.01
+aupro_fpr_limit: 0.3
+warmup_images: 3
+max_pixels: 20000000
