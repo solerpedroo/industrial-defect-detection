@@ -169,4 +169,22 @@ limit); it adds no endpoint and never sends that report to the inference API.
 
 ## `GET /api/reports/{experiment_id}`
 
-`404` until Wave 8 writes a report artifact. Unknown experiment ids also return `404`, with a detail that names the missing id.
+Returns a generated package when `REPORTS_ROOT/<experiment_id>/report.md` exists
+(`REPORTS_ROOT` defaults to `sample_outputs/`):
+
+```json
+{
+  "experiment_id": "exp-b-robustness",
+  "markdown": "# Report: exp-b-robustness\n...",
+  "figures": ["image_auroc.png"]
+}
+```
+
+Unknown protocol ids return `404` and name the id. A known protocol without a
+package returns `404` and says no artifact has been generated. Symlinked
+packages are rejected. Markdown above 1 MiB returns `413`. The route does not
+train, score, or embed PNG bytes. Figure files stay in the package directory.
+
+Experiment B packages, when produced, reuse experiment A thresholds. Experiment
+C packages may list a normal-train subset plan and an explicit blocked note
+instead of AUROC. Reports state that anomaly scores are not physical severity.
