@@ -1,6 +1,10 @@
 # Starting point for an RTX 3050 6 GB notebook. Not a tuned optimum.
 seed: 42
 image_size: 256
+preprocessing:
+  grayscale: false
+  # Training only, and only if the category explicitly permits it.
+  horizontal_flip_probability: 0.0
 categories:
   - bottle
   - leather
