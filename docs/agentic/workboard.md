@@ -11,6 +11,6 @@
 | 6 | `tasks/wave-6-inference-ui.md` | done (engineering) | Codex; independently reviewed; 319 Python / 4 frontend / 3 browser tests pass; calibration-bound cached serving and ephemeral PNG UI; real-data/CUDA gates open; one file per commit |
 | 7 | `tasks/wave-7-comparison.md` | done (engineering) | Codex; independently reviewed; 31 frontend / 7 browser / 38 targeted API tests pass; same-upload maps and local saved metrics/category filter/CSV; real-data/CUDA open; one file per commit |
 | 8 | `tasks/wave-8-reports.md` | done (engineering) | Report packages, frozen-threshold experiment B, experiment C plan blocked on manifest contract |
-| 9 | `tasks/wave-9-ship.md` | proposed | README, demo, deploy |
+| 9 | `tasks/wave-9-ship.md` | done (documentation) | README reproduction path, dataset-free deploy, demo storyboard; real-data/CUDA/C retrain open |
 
-**Last reviewed:** 2026-10-14 — Wave 8 engineering complete. Real-data and CUDA gates remain open.
+**Last reviewed:** 2026-10-14 — Wave 9 documentation complete. Real-data, CUDA, and protocol C retrain gates remain open.
