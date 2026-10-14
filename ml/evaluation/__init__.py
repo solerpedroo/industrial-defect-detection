@@ -1,8 +1,20 @@
-"""Metric names shared by evaluation scripts and later API exports.
+"""Offline metrics/calibration; no optional model library imported here."""
 
-Functions that compute the metrics arrive in Wave 5. Names are stable so tests
-can lock the contract early.
-"""
+from .calibration import FrozenThreshold, calibrate_normal
+from .config import EvaluationConfig, load_evaluation_config
+from .metrics import aupro, confusion_metrics, evaluate_predictions, ranking_metrics
+
+__all__ = [
+    "FrozenThreshold",
+    "EvaluationConfig",
+    "calibrate_normal",
+    "load_evaluation_config",
+    "aupro",
+    "confusion_metrics",
+    "evaluate_predictions",
+    "ranking_metrics",
+    "evaluate",
+]
 
 IMAGE_METRICS = (
     "image_auroc",
@@ -31,6 +43,8 @@ COMPUTE_METRICS = (
 )
 
 
-def evaluate(*_args: object, **_kwargs: object) -> None:
-    """Evaluate a prepared model. Not available in Wave 0."""
-    raise NotImplementedError("Evaluation metrics are implemented in Wave 5.")
+def evaluate(*args, **kwargs):
+    """Run experiment A offline; model extras load only when this is invoked."""
+    from .experiment import run_experiment
+
+    return run_experiment(*args, **kwargs)
