@@ -1,7 +1,7 @@
 # Industrial Defect Detection — Implementation Plan
 
 **Version:** 1.0  
-**Status:** Waves 1–6 engineering delivered; real-data and CUDA gates open → MVP
+**Status:** Waves 1–7 engineering delivered; real-data and CUDA gates open → MVP
 **Scope reference:** [project-scope.md](./project-scope.md)
 
 ---
@@ -39,7 +39,9 @@ are implemented under ADR-012. Three-category evidence is synthetic CPU; real
 experiment A remains open. The user then authorized Wave 6: optional trusted
 calibration-bound HTTP serving and the upload/heatmap/mask UI are implemented
 under ADR-013. Real-model synthetic CPU browser evidence does not close real
-MVTec/CUDA gates. Wave 7 is the next bounded task.
+MVTec/CUDA gates. Wave 7 adds live same-upload comparison and local saved-report
+metrics/category filtering/CSV under ADR-014, with synthetic engineering evidence.
+Wave 8 is the next bounded task; real-data and CUDA gates remain open.
 
 ```mermaid
 flowchart LR
