@@ -9,12 +9,20 @@ copy is absent, so the two real-data acceptance items below remain open. See the
 [`Wave 1 task card`](agentic/tasks/wave-1-dataset.md) and
 [`real-data handoff`](agentic/handoffs/2026-10-14-wave-1-dataset.md).
 
+Wave 2 engineering is implemented and reviewed: the full Python suite has
+121 passing tests, including 49 preprocessing cases. The user authorized this
+synthetic-data continuation while real-MVTec preparation remains open. A shared
+stage-aware function and upload-decoder compatibility are verified; actual model
+training/inference consumers will be integrated in Waves 3/4. The preprocessing
+MVP criterion therefore remains pending integration, rather than claiming model
+behavior. See [`Wave 2 evidence`](agentic/tasks/wave-2-preprocessing.md).
+
 | Criterion | Wave | Status |
 | --- | --- | --- |
 | Monorepo, catalogs, API shell, dashboard shell, CI | 0 | done |
 | Bottle, Leather, and Metal Nut prepared locally | 1 | open |
 | Train, validation, and official test isolated | 1 | open |
-| Recorded preprocessing shared by train and inference | 2 | open |
+| Recorded preprocessing shared by train and inference | 2 | implemented; model consumers pending |
 | Autoencoder trains and writes reconstruction maps | 3 | open |
 | PatchCore builds a memory and writes anomaly maps | 4 | open |
 | Image-level and pixel-level metrics | 5 | open |
