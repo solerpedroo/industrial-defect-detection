@@ -5,8 +5,8 @@ images: a convolutional autoencoder and PatchCore, pixel-level localization,
 and reproducible comparisons on MVTec AD.
 
 **Stack:** Next.js (TypeScript) · FastAPI · PyTorch (from Wave 3) · Anomalib (from Wave 4)  
-**Status:** Waves 1–5 data, preprocessing, offline models and evaluation implemented with synthetic CPU tests.
-Real MVTec preparation and live HTTP heatmaps are pending. See [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md).
+**Status:** Waves 1–6 data, offline models/evaluation and calibrated HTTP inspection implemented with synthetic CPU tests.
+Real MVTec preparation, benchmark and CUDA acceptance remain pending. See [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md).
 
 ## What this repository does today
 
@@ -22,11 +22,12 @@ Real MVTec preparation and live HTTP heatmaps are pending. See [`docs/mvp-accept
 - Reloads self-contained PatchCore artifacts offline to produce raw scores/maps
 - Freezes normal-validation thresholds before any official test evaluation
 - Exports image/pixel metrics and documented compute measurements as JSON/CSV
-- Validates inspection uploads and reports that no checkpoint is ready yet
+- Serves installed category/model pairs with frozen thresholds and ephemeral PNG results
+- Shows heatmaps, adjustable overlays, reconstruction and downloadable masks
 - Dashboard pages: Overview, Datasets, Inference Lab, Experiments, Comparison
 
 Training does not run inside the API. Offline experiment A is runnable; real-MVTec
-results, web heatmaps and presentation reports remain pending. Protocols A, B, and
+results and presentation reports remain pending. Protocols A, B, and
 C are specified under [`experiments/`](experiments/README.md).
 
 ## Architecture
@@ -83,7 +84,7 @@ Preprocessing uses `ml.preprocessing.load_preprocess_config(category_id)` and
 float32, with display RGB pixels and JSON-safe provenance in the same result.
 Sizes/statistics come from YAML; all category flip permissions start disabled.
 See the [preprocessing contract](docs/architecture.md#shared-preprocessing).
-Both offline model consumers are implemented; HTTP serving remains planned.
+Both model families support offline and explicitly configured HTTP consumers.
 
 ## Offline Autoencoder
 
@@ -119,7 +120,7 @@ error_map = prediction.anomaly_map          # HW channel-mean squared RGB error.
 
 The score is the map's spatial mean. Bare prediction makes no defect decision;
 offline evaluation below calibrates a threshold on normal validation data.
-The web catalog remains `planned`.
+The default web catalog remains `planned` until compatible serving artifacts are installed.
 
 ## Offline PatchCore
 
@@ -210,8 +211,74 @@ model allocation. Autoencoder prepare time uses checkpoint-bound `history.json`;
 when absent it is explicitly unknown. Pixel budgets fail rather than subsample.
 
 Only synthetic CPU experiment evidence is available today. The real licensed
-MVTec experiment, CUDA timing and HTTP serving remain acceptance gates. See
+MVTec experiment and CUDA timing remain acceptance gates. See
 [`experiment A`](experiments/autoencoder-vs-patchcore/README.md).
+
+## Calibrated HTTP inference
+
+Install the corresponding model extra (`training` for Autoencoder, `patchcore`
+for PatchCore) and prepare compatible checkpoints plus Wave 5 `calibration.json`.
+No model is enabled merely because a `.pt` file exists. Create an operator-owned
+manifest outside tracked source files, for example `runs/serving.json`:
+
+```json
+{
+  "schema_version": 1,
+  "trusted_root": "/absolute/path/to/industrial-defect-detection",
+  "device": "cpu",
+  "entries": [
+    {
+      "category_id": "bottle",
+      "model_id": "autoencoder",
+      "checkpoint": "checkpoints/bottle-ae-001/best.pt",
+      "calibration": "runs/experiment-a-bottle-001/calibration.json"
+    },
+    {
+      "category_id": "bottle",
+      "model_id": "patchcore",
+      "checkpoint": "checkpoints/bottle-patchcore-001/memory.pt",
+      "calibration": "runs/experiment-a-bottle-001/calibration.json"
+    }
+  ]
+}
+```
+
+All entry paths are canonical relative paths under the explicit trusted root;
+symlinks, escapes and special files are rejected. Never install uploaded models
+or untrusted JSON. Start the API with server-only configuration:
+
+```bash
+INFERENCE_MANIFEST=/absolute/path/to/runs/serving.json \
+  .venv/bin/uvicorn app.main:app --app-dir backend --port 8000
+```
+
+Startup validates checkpoint/calibration hashes, configuration, preprocessing,
+normal split membership/checksums and higher-quantile threshold provenance. It
+loads, freezes and warms predictors once, with no dataset files required. A
+frozen calibration is usable independently of a completed test report. Invalid
+installations fail startup; restart to change the installed snapshot. Prediction
+never trains, reloads weights or chooses thresholds from uploads.
+
+`GET /api/models` exposes runtime `ready_categories` and `synthetic_categories`.
+Uninstalled pairs retain `501`, even when another category makes the model
+globally `ready`. Without a manifest the API remains lightweight and `planned`.
+Synthetic calibration additionally requires `INFERENCE_ALLOW_SYNTHETIC=1` and
+produces a visible demonstration warning; it is not industrial acceptance.
+
+Inference Lab shows prepared input, fixed-scale heatmap, strict binary pixel mask,
+optional reconstruction and an opacity-adjustable overlay. Maps/downloads share
+model resolution, not original coordinates. Scores remain family-specific, not
+severity/probability; image and pixel decisions use separate normal-validation
+thresholds with strict `>`. Changing inputs or failed/obsolete requests clears
+old results. Heat colors use [0,2×pixel threshold], not upload min/max.
+
+Uploads/results are not persisted by the application. Multipart bodies are bounded
+before parsing (10 MiB plus 64 KiB overhead); temporary framework spools close at
+request end. Prediction/decoding/PNG work runs off the async event loop. Latency
+excludes decode/PNG encode and includes model preprocessing; CUDA is synchronized
+when selected, but remains unverified. `ALLOWED_ORIGINS` must include your UI
+origin if it differs from the default localhost ports. Do not expose serving
+configuration through `NEXT_PUBLIC_*` variables.
 
 ## Quality checks
 
@@ -226,6 +293,20 @@ PATCHCORE_PRETRAINED_SMOKE=1 .venv/bin/pytest backend/tests/test_patchcore.py -q
 cd frontend && npm run lint && npm run test && npm run build
 cd frontend && npx playwright install chromium && npm run test:e2e
 ```
+
+Browser tests start an isolated tiny synthetic real-model API fixture (both model
+extras required), not a mock predictor. No pretrained download is needed. Use
+`PLAYWRIGHT_REAL_INFERENCE=0` only for a shell-only lightweight check; inference
+flows are then skipped. To preserve already running servers, choose free ports:
+
+```bash
+cd frontend
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8001 npm run build
+PLAYWRIGHT_API_URL=http://127.0.0.1:8001 PLAYWRIGHT_WEB_URL=http://localhost:3001 \
+  PLAYWRIGHT_PRODUCTION=1 npm run test:e2e
+```
+
+Public API URLs are baked into a production build, not changed by `next start`.
 
 ## Documentation map
 
