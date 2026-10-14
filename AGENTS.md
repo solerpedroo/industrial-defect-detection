@@ -2,9 +2,9 @@
 
 ## Current boundary
 
-**Waves 1–6 engineering is implemented; real-data acceptance remains open.**
-The user authorized continuation with synthetic evidence (ADR-009 through ADR-013).
-Wave 7 is the next planned task. Before real-data training, audit the licensed
+**Waves 1–7 engineering is implemented; real-data acceptance remains open.**
+The user authorized continuation with synthetic evidence (ADR-009 through ADR-014).
+Wave 8 is the next planned task. Before real-data training, audit the licensed
 local MVTec copy and create normal-only manifests. Offline Autoencoder fitting
 and checkpoint prediction are implemented with CPU synthetic evidence.
 Frozen pretrained PatchCore memory and trusted offline reload are also implemented;
@@ -19,7 +19,10 @@ Inference Lab maps/downloads are implemented; see
 `docs/agentic/handoffs/2026-10-14-wave-6-inference-ui.md`. Default YAML entries
 remain `planned`; API readiness is per installed calibrated category/model pair.
 Synthetic serving requires explicit opt-in and warning. No request trains or
-calibrates. Read [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md)
+calibrates. Wave 7 adds same-upload model comparison and local saved-report
+metrics/category filtering/CSV. See `docs/agentic/handoffs/2026-10-14-wave-7-comparison.md`
+for structural report validation, provenance and the browser-only boundary.
+Read [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md)
 before treating any module as done. Status lives in [`docs/agentic/workboard.md`](docs/agentic/workboard.md).
 
 ## Start protocol
