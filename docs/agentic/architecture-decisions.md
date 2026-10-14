@@ -4,6 +4,19 @@ This log is the durable decision record for people and agents. Add an entry
 before changing a cross-cutting convention. Accepted decisions supersede informal
 chat context; implementation details belong in task cards.
 
+## ADR-016 — Ship without publishing data or closing real-data gates
+
+- **Status:** accepted
+- **Date:** 2026-10-14
+- **Decision:** Wave 9 documents reproduction, a dataset-free deploy path, and
+  the acceptance table. The git tree and `backend/Dockerfile` do not contain
+  MVTec images or checkpoints. Operators mount trusted artifacts outside the
+  default image. README and test rows can be marked from local commands.
+  Rows that need a licensed dataset, CUDA, or experiment C retraining stay open.
+- **Consequence:** The default public image serves catalogs and health. Model
+  serving still needs the offline extras and an operator manifest. A synthetic
+  opt-in is a demonstration. A blocked experiment C package is not a measured AUROC.
+
 ## ADR-015 — Offline report packages and sealed experiment B/C
 
 - **Status:** accepted
