@@ -1,4 +1,4 @@
-# API contract — Wave 0
+# API contract — Wave 1 dataset extension
 
 Base URL in local development: `http://localhost:8000`. The frontend reads `NEXT_PUBLIC_API_URL`.
 
@@ -31,6 +31,7 @@ Returns the MVTec catalog and per-category file counts from the local tree. `sto
       "purpose": "Detect changes on objects with defined geometry",
       "availability": "missing",
       "train_normal": 0,
+      "validation_normal": 0,
       "test_normal": 0,
       "test_anomalous": 0,
       "mask_count": 0,
@@ -41,7 +42,19 @@ Returns the MVTec catalog and per-category file counts from the local tree. `sto
 }
 ```
 
-`availability` is `present` when `data/mvtec-ad/<id>` exists. `validation_split` stays `not_created` until Wave 1 writes a split manifest. Official test images are never counted as validation.
+`availability` is `present` for a regular category directory; it is not an
+integrity certificate. `validation_split` is `not_created`, `created`, or
+`invalid`. A valid manifest at `ml/data/splits/<id>.json` makes `train_normal`
+count retained fit images and `validation_normal` count held-out normal images.
+Their sum is the official normal training inventory. Official test images are
+never counted as validation.
+
+Absent manifests expose all official training images as `train_normal` and zero
+validation images. Malformed or stale manifests return `invalid`, the current
+training inventory count and zero validation images; callers must not fit until
+the offline audit and manifest creation succeed. Reads validate normal training
+membership and file checksums, never decode test pixels, never repair manifests,
+and never expose absolute host paths or checksum inventories.
 
 ## `GET /api/datasets/{category_id}/summary`
 
