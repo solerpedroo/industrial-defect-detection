@@ -1,0 +1,11 @@
+protocol_id: exp-a-autoencoder-vs-patchcore
+seed: 42
+categories:
+  - bottle
+  - leather
+  - metal_nut
+models:
+  - autoencoder
+  - patchcore
+image_size: 256
+split_policy: validation thresholds, then a single official test report
