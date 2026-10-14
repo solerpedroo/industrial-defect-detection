@@ -35,6 +35,6 @@ Parallelize independent model packages and tests only after the Planner assigns 
 | 6 | done (engineering; real-data/CUDA pending) | `wave-6-inference-ui.md` | 2026-10-14 |
 | 7 | done (engineering; real-data/CUDA pending) | `wave-7-comparison.md` | 2026-10-14 |
 | 8 | done (engineering; real-data/CUDA and protocol C retrain blocked) | `wave-8-reports.md` | 2026-10-14 |
-| 9 | proposed | `wave-9-ship.md` | — |
+| 9 | done (documentation; real-data/CUDA/C retrain open) | `wave-9-ship.md` | 2026-10-14 |
 
 When a wave is done, update this table, the workboard row, and record command output in the task card.
