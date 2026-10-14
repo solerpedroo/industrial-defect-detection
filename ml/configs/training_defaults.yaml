@@ -23,6 +23,10 @@ autoencoder:
   loss: mse
 patchcore:
   backbone: resnet18
+  pre_trained: true
+  batch_size: 8
+  num_neighbors: 9
+  max_patches: 500000
   layers:
     - layer2
     - layer3
