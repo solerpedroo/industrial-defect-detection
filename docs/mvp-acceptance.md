@@ -59,6 +59,13 @@ synthetic real-model API output and generated evaluator reports; real-MVTec
 benchmark and CUDA acceptance remain open. See
 [`Wave 7 evidence`](agentic/tasks/wave-7-comparison.md).
 
+Wave 8 writes report packages and serves them from `GET /api/reports/{id}` when
+the markdown artifact exists. Experiment B scoring reuses frozen experiment A
+thresholds on in-memory degradations. Experiment C records subset membership
+and an explicit block on retraining, because fit manifests still require the
+full normal inventory. Scores are not described as physical severity. Real-data
+and CUDA acceptance remain open. See [`Wave 8 evidence`](agentic/tasks/wave-8-reports.md).
+
 | Criterion | Wave | Status |
 | --- | --- | --- |
 | Monorepo, catalogs, API shell, dashboard shell, CI | 0 | done |
@@ -71,9 +78,9 @@ benchmark and CUDA acceptance remain open. See
 | Thresholds chosen without the official test split | 5 | implemented offline; real-data calibration open |
 | UI loads an image and a compatible model | 6 | implemented; synthetic real-model browser evidence; real-data gate open |
 | Dashboard shows quantitative and visual comparison | 7 | implemented; same-upload maps plus local saved metrics/CSV; synthetic evidence only |
-| Results export as Markdown, CSV, JSON, or PNG | 8 | report package open; offline JSON/CSV, UI table CSV and inference PNG already available |
+| Results export as Markdown, CSV, JSON, or PNG | 8 | implemented offline; experiment C metrics blocked; real-data gate open |
 | Essential modules covered by tests | 9 | open |
 | README explains how to reproduce experiments | 9 | open |
-| Three comparative experiments documented | 8 | open |
+| Three comparative experiments documented | 8 | A measured offline; B scoring implemented; C membership plan only |
 
 Reference: [`project-scope.md`](project-scope.md) §10.
