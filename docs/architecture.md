@@ -1,4 +1,4 @@
-# Architecture — Wave 5 offline evaluation
+# Architecture — Wave 6 calibrated inspection
 
 ## Boundary map
 
@@ -24,7 +24,8 @@ Per ADR-004, decoded color images are contiguous RGB `numpy.ndarray` values with
 ## Catalogs
 
 `ml/configs/categories.yaml` is the category contract: Bottle, Leather, Metal Nut, plus the MVTec license.  
-`ml/configs/models.yaml` is the model contract: `autoencoder` and `patchcore`, both `planned`.  
+`ml/configs/models.yaml` owns `autoencoder` and `patchcore`, defaulting to `planned`.
+HTTP readiness is derived at startup for explicitly installed category/model pairs.
 `ml/configs/training_defaults.yaml` records the starting hyperparameters. They are not claimed to be optimal.
 
 `GET /api/datasets` and `GET /api/models` serve those files. When `data/mvtec-ad/<category>` exists locally, the summary counts train, test, and mask files. Counts stay zero and `availability` is `missing` until the dataset is downloaded outside Git.
@@ -127,7 +128,7 @@ metadata = result.record         # Persist beside experiment/checkpoint artifact
 
 The shared paths have synthetic and upload-decoder integration evidence. Wave 3
 adds actual offline autoencoder training and prediction consumers; Wave 4 adds
-PatchCore. HTTP model consumers remain unimplemented. The user authorized engineering while
+PatchCore. Wave 6 adds optional calibrated HTTP consumers. The user authorized engineering while
 the licensed real-MVTec gate remains open; synthetic checks do not certify real
 industrial detection performance.
 
@@ -184,7 +185,8 @@ pipeline, eval and inference_mode. It returns square HWC float32 reconstruction
 [0,1], HW float32 channel-mean squared RGB difference [0,1], the map's spatial mean
 as score, prepared display RGB and preprocessing provenance. These are at model
 resolution, not original-resolution localization. There is no threshold or label.
-The catalog and HTTP inference stay `planned`/501 until their serving gate.
+The canonical catalog defaults to `planned`; Wave 6 installs compatible runtime
+category/model pairs without claiming industrial acceptance.
 
 ## Offline PatchCore
 
@@ -298,9 +300,55 @@ No calibrated HTTP loader, UI heatmap or catalog readiness is added here.
 
 ## Inference boundary
 
-`POST /api/inference` and `POST /api/inference/compare` accept multipart PNG or JPEG uploads. They reject unknown categories and models with `422`, invalid images with `400`, `413`, or `415`, and ready-looking calls with `501` until a wave marks the model `ready` and installs a loader.
+ADR-013 implements an optional operator-owned `INFERENCE_MANIFEST` installation.
+It lists an explicit trusted root, CPU/CUDA device and relative checkpoint/
+Wave 5 frozen `calibration.json` paths for each category/model pair. Startup
+rejects unsafe regular-file paths, unsupported schema, checkpoint/calibration
+hash drift, incompatible model/config/preprocessing hashes, normal split/held-out
+membership/checksums and quantile/comparator/count provenance. No raw dataset
+files are needed. Predictors are loaded, frozen, warmed and cached before serving;
+restart to change a snapshot. Family imports are lazy, so an Autoencoder-only
+installation needs `training`, not Anomalib. Without installation neither torch
+nor Anomalib imports through the API.
 
-Uploads are not written to disk.
+Runtime `GET /api/models` overlays ready status, `ready_categories` and
+`synthetic_categories` on canonical YAML IDs. A globally ready model can still
+have an uninstalled category. Synthetic calibration requires the server-only
+`INFERENCE_ALLOW_SYNTHETIC=1` opt-in and a response/UI demonstration warning.
+Real MVTec/CUDA readiness is not inferred from passing synthetic serving tests.
+
+Both existing inference POST routes validate category/model IDs without touching
+dataset sources. Unknown IDs return 422; invalid images return 400/413/415;
+uninstalled pairs retain 501; invalid model output returns sanitized 503. The
+ASGI transport bounds complete/chunked multipart bodies before parsing to 10 MiB
+plus 64 KiB overhead. UploadFile reads additionally stop at limit+1 and always
+close. Framework multipart spools may temporarily use disk; application uploads,
+PNGs and predictions are not persisted/logged. Decode, prediction and encoding
+run off the async event loop. Predictor use is serialized per process to avoid
+concurrent mutable backend/device work; workers each own their loaded copies.
+
+Prediction uses the common RGB/model-square contract. Image label is raw score
+`> image_threshold`; mask is raw map `> pixel_threshold` as 0/255 PNG. Prepared
+input, colored heatmap, mask, 50% overlay and optional Autoencoder reconstruction
+are base64 PNGs at the same model resolution, not original coordinates. Heat
+colors use fixed [0,2×pixel threshold], with zero/nonzero intensity for threshold
+zero. Display saturation does not normalize raw scores or imply severity.
+The existing compare transport preflights both installed pairs and reuses one
+decoded image, without introducing a saved-experiment comparison dashboard.
+
+`inference_ms` covers synchronized prediction/preprocessing, not decode/encode,
+load or queue waiting. `request_ms` includes decode/queued work/PNG rendering
+before serialization/network transfer. HTTP never trains or recalibrates, opens
+test pixels/masks or reads weight files per request. Response hashes identify
+the installed model/config/calibration, without exposing absolute host paths.
+
+Inference Lab consumes runtime category coverage, derives selections from API
+catalogs, submits explicitly and aborts/ignores obsolete responses. Input changes,
+resubmissions and failures clear old PNGs/downloads. Opacity changes are client-
+only. Synthetic warnings, independent image/pixel decisions and score/geometry
+limitations are explicit. Playwright tests exercise actual models/API, PNG
+downloads, cleanup and stale response guards; production-test API URLs must be
+supplied at build time. Existing services are preserved through alternate ports.
 
 ## What each wave adds
 
@@ -311,7 +359,7 @@ Uploads are not written to disk.
 | 3 | Implemented offline PyTorch autoencoder, best checkpoints and reconstruction maps; CPU synthetic evidence |
 | 4 | Implemented frozen PatchCore adapter, memory artifacts and shared `AnomalyPredictor`; CPU synthetic/pretrained smoke evidence |
 | 5 | Implemented exact metrics, normal-validation thresholds and offline JSON/CSV experiment A; real-MVTec benchmark pending |
-| 6 | Heatmap overlay and downloads in Inference Lab |
+| 6 | Implemented trusted calibrated HTTP serving, heatmap/overlay/mask/reconstruction and downloads; synthetic real-model browser evidence |
 | 7 | Comparison of saved experiment artifacts |
 | 8 | Report export and experiments B and C |
 | 9 | Deploy, demo, acceptance evidence |
