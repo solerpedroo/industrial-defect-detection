@@ -227,3 +227,51 @@ chat context; implementation details belong in task cards.
 - **References:** [Anomalib](https://pypi.org/project/anomalib/2.7.0/),
   [PatchCore model](https://github.com/open-edge-platform/anomalib/blob/main/src/anomalib/models/image/patchcore/torch_model.py),
   [k-center sampler](https://github.com/open-edge-platform/anomalib/blob/main/src/anomalib/models/components/sampling/k_center_greedy.py).
+
+## ADR-012 — Validation-frozen offline evaluation
+
+- **Status:** accepted
+- **Date:** 2026-10-14
+- **Scope:** Wave 5 numerical metrics/calibration and offline experiment A only;
+  no new dependency, HTTP readiness, UI, robustness or subset study.
+- **Calibration:** Per category/model, use normal held-out image scores and pooled
+  normal map pixels, separately. Threshold is NumPy's higher empirical quantile
+  at `1 - target_fpr`; anomaly means strictly `value > threshold`. Record the
+  target, quantile/method/comparator, observed calibration exceedance, counts,
+  source IDs/checksums and model/config hash. This controls empirical calibration
+  exceedance conservatively, not population FPR; spatial pixels are correlated.
+  Small validation splits can only support coarse operating points. Never pick
+  thresholds/normalization/hyperparameters from official test scores or masks.
+- **Order:** Validate trusted artifacts against current normal split provenance,
+  freeze and persist all requested category/model thresholds before any official
+  test audit/decoding. Both models must share test IDs, resolution and geometry;
+  family-specific normalization/scores remain distinct. Test masks resize with
+  nearest-neighbor; report at model resolution, not original pixel geometry.
+- **Metrics:** NumPy exact grouped tied-score ROC trapezoids and non-interpolated
+  average precision (`aupr` fields mean AP, not trapezoidal PR area). Global pixel
+  AUROC/AP, micro IoU/Dice; image precision/recall/F1 and TP/FP/TN/FN with frozen
+  image threshold. Undefined ratios/rank metrics are JSON null with explicit
+  reasons, never invented zero. AUPRO averages 8-connected regions equally,
+  integrates the grouped threshold curve to configured background FPR limit with
+  linear endpoint interpolation and divides by that limit. No per-region or
+  per-image renormalization of raw scores.
+  Accepted score conversion to float64 must be lossless; integers above 2**53
+  are explicitly rejected rather than becoming fabricated ties.
+- **Compute/provenance:** Warmup precedes timed per-image end-to-end prediction
+  (preprocessing included; file decode/load excluded). CUDA synchronizes around
+  timing and records allocator peak separately. CPU peak is explicitly an
+  approximate process high-water RSS, not isolated model allocation. Record
+  artifact bytes/hash, preparation duration, versions, hardware, config/seed,
+  test image/mask byte hashes, timings and both thresholds. Pixel count budgets
+  fail explicitly; there is no hidden subsampling. Completed JSON publishes last
+  after CSV; interrupted runs are not completed reports.
+  Autoencoder duration is read from regular complete `history.json`, bound to
+  checkpoint SHA/config/split, with sidecar drift checks. Missing sidecar means
+  null duration with an explicit source; invalid provenance is rejected.
+- **Boundary:** User authorized Wave 5 despite the real-data gate. Synthetic
+  integration evidence is not experiment A's real-MVTec result. Catalogs stay
+  `planned`. Protocol config is fixed before the final official test report;
+  code cannot prevent a user deliberately rerunning/tuning separate experiments.
+- **References:** [ROC AUC](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.roc_auc_score.html),
+  [average precision](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.average_precision_score.html),
+  [Anomalib metric definitions](https://anomalib.readthedocs.io/en/lib-v2.7.0/markdown/guides/reference/metrics/index.html).
