@@ -1,0 +1,48 @@
+experiments:
+  - id: exp-a-autoencoder-vs-patchcore
+    title: Autoencoder vs PatchCore
+    status: planned
+    question: Which algorithm identifies and localizes defects more accurately on the same test images?
+    categories:
+      - bottle
+      - leather
+      - metal_nut
+    models:
+      - autoencoder
+      - patchcore
+    metrics:
+      - image_auroc
+      - pixel_auroc
+      - aupro
+      - inference_latency_ms
+      - artifact_size_bytes
+  - id: exp-b-robustness
+    title: Robustness under image degradation
+    status: planned
+    question: How do controlled noise, blur, and brightness changes affect scores and localization?
+    categories:
+      - bottle
+      - leather
+      - metal_nut
+    models:
+      - autoencoder
+      - patchcore
+    metrics:
+      - image_auroc
+      - pixel_auroc
+  - id: exp-c-dataset-size
+    title: Normal training set size vs performance
+    status: planned
+    question: How many normal images are required before detection quality stabilizes?
+    categories:
+      - bottle
+      - leather
+      - metal_nut
+    models:
+      - autoencoder
+      - patchcore
+    metrics:
+      - image_auroc
+      - pixel_auroc
+      - artifact_size_bytes
+      - prepare_time_s
