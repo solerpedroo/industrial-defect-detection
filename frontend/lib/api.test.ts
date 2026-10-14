@@ -50,4 +50,16 @@ describe("API client", () => {
     await expect(postInference(form)).rejects.toBeInstanceOf(ApiError);
     await expect(postInference(form)).rejects.toThrow(/artifact/);
   });
+
+  it("passes an abort signal with multipart inference and returns the typed payload", async () => {
+    const payload = { model_id: "autoencoder", score: 0.2, label: "normal" };
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(payload), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const form = new FormData();
+    const controller = new AbortController();
+    await expect(postInference(form, controller.signal)).resolves.toEqual(payload);
+    expect(fetchMock).toHaveBeenCalledWith("http://localhost:8000/api/inference", {
+      method: "POST", body: form, signal: controller.signal,
+    });
+  });
 });
