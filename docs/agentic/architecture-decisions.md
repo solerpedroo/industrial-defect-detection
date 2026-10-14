@@ -183,3 +183,47 @@ chat context; implementation details belong in task cards.
 - **References:** [PyTorch installation](https://pytorch.org/get-started/previous-versions/),
   [restricted loading](https://docs.pytorch.org/docs/2.10/generated/torch.load.html),
   [reproducibility](https://docs.pytorch.org/docs/2.10/notes/randomness.html).
+
+## ADR-011 — Frozen PatchCore memory through Anomalib
+
+- **Status:** accepted
+- **Date:** 2026-10-14
+- **Dependencies:** Optional `patchcore` extra pins Anomalib 2.7.0, torchvision
+  0.25.x and timm 1.0.x, retaining torch 2.10.x. CPU wheels are used for regression
+  evidence/CI. API import paths stay independent of these optional libraries.
+- **Adapter:** Use Anomalib's low-level PatchcoreModel, not its Lightning trainer,
+  postprocessing, automatic thresholds or dataset splitting. The project owns
+  validated manifest selection and recorded Wave 2 preprocessing. Input is RGB
+  HWC uint8 [0,255], resized and ImageNet-normalized to CHW float32. Output is a
+  nonnegative finite square HW raw feature-distance map, with no upper bound.
+- **Backbone:** ResNet-18 layer2/layer3, pretrained by default, all parameters
+  frozen and feature extractor held in eval. No optimizer/backpropagation or
+  batchnorm updates during memory construction. Random-weight mode is explicit,
+  recorded and intended only for isolated offline regression tests, never passed
+  off as pretrained evidence. Initial pretrained weights may populate local cache;
+  artifacts include the extracted backbone state so reload never downloads them.
+- **Memory:** Only retained normal fit IDs are decoded; validation pixels and
+  test/masks stay sealed. Manifest checks hash normal validation bytes for drift
+  without decoding them. Read hashes match the decoded fit bytes. Anomalib extracts/aggregates
+  features and samples a seeded k-center coreset using the YAML ratio. Require
+  `floor(patches * ratio) >= num_neighbors` to avoid empty/degenerate support.
+  Total patch count is bounded explicitly; no silent reservoir or ratio change.
+- **Score:** Return Anomalib's raw weighted maximum-patch nearest-neighbor score
+  (plain maximum when neighbors=1), not a spatial mean or an Autoencoder-scale
+  equivalent. AnomalyPrediction/AnomalyPredictor document common shapes and
+  differing numerical scales. No score calibration, threshold, label or severity.
+- **Artifacts:** New ignored/external run only, outside sources. Restricted
+  CPU weights_only serialization/load of complete model state plus primitive
+  provenance; trusted-root/symlink/special-path and schema/state checks. A staged
+  prepared `.pt` publishes last, after JSON metadata; reload freezes/evals the
+  stored backbone and dynamically restores memory with no pretrained retrieval.
+- **Boundary:** User authorized Wave 4 engineering before real-MVTec acceptance.
+  CPU synthetic and pretrained smoke evidence are distinct from real benchmark,
+  CUDA or HTTP serving. Model catalogs stay `planned` until the serving gate.
+- **Evidence:** 213 Python tests pass with the actual pretrained smoke enabled;
+  independent review found no blockers. Scoped RNG, float32 dtype and backend
+  settings are restored. Upstream TorchScript/Python 3.14 and deprecated-import
+  warnings are retained, not evidence of cross-version or CUDA compatibility.
+- **References:** [Anomalib](https://pypi.org/project/anomalib/2.7.0/),
+  [PatchCore model](https://github.com/open-edge-platform/anomalib/blob/main/src/anomalib/models/image/patchcore/torch_model.py),
+  [k-center sampler](https://github.com/open-edge-platform/anomalib/blob/main/src/anomalib/models/components/sampling/k_center_greedy.py).
