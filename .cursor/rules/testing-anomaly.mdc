@@ -1,0 +1,14 @@
+---
+description: Test rules for anomaly-detection behavior.
+globs: backend/tests/**/*.py
+alwaysApply: false
+---
+
+# Anomaly tests
+
+- Use synthetic arrays and temporary folders. Do not commit MVTec images.
+- Seed any random split or noise and assert which ids landed in validation.
+- A threshold fixture must be computed from validation scores only.
+- Assert shapes, dtypes, and error codes. Avoid exact float equality on distances unless the case is discrete.
+- Catalog tests must fail if a category or model id disappears from YAML.
+- Keep image fixtures tiny.
