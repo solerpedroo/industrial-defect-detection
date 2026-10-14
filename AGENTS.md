@@ -2,9 +2,9 @@
 
 ## Current boundary
 
-**Waves 1–8 engineering is implemented; real-data acceptance remains open.**
-The user authorized continuation with synthetic evidence (ADR-009 through ADR-015).
-Wave 9 is the next planned task. Before real-data training, audit the licensed
+**Waves 1–9 engineering is documented; real-data acceptance remains open.**
+The user authorized continuation with synthetic evidence (ADR-009 through ADR-016).
+There is no later wave in this roadmap. Before real-data training, audit the licensed
 local MVTec copy and create normal-only manifests. Offline Autoencoder fitting
 and checkpoint prediction are implemented with CPU synthetic evidence.
 Frozen pretrained PatchCore memory and trusted offline reload are also implemented;
@@ -25,6 +25,9 @@ for structural report validation, provenance and the browser-only boundary.
 Wave 8 writes report packages, scores experiment B at frozen thresholds and
 records an experiment C membership plan. Subset retraining stays blocked by the
 manifest contract. See `docs/agentic/handoffs/2026-10-14-wave-8-reports.md`.
+Wave 9 documents reproduction, a dataset-free deploy path, and the acceptance
+table. It does not close real-data, CUDA, or experiment C retraining. See
+`docs/agentic/handoffs/2026-10-14-wave-9-ship.md`.
 Read [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md)
 before treating any module as done. Status lives in [`docs/agentic/workboard.md`](docs/agentic/workboard.md).
 
