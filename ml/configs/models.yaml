@@ -1,0 +1,13 @@
+models:
+  - id: autoencoder
+    name: Convolutional Autoencoder
+    family: reconstruction
+    status: planned
+    backbone: null
+    description: Reconstruction model trained on normal images only. Differences between input and reconstruction estimate anomalous regions.
+  - id: patchcore
+    name: PatchCore
+    family: feature_memory
+    status: planned
+    backbone: resnet18
+    description: Feature-memory method. A pretrained backbone embeds normal patches. Inference compares new patches with that memory and does not fine-tune the backbone.
