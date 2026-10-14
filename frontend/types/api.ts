@@ -5,11 +5,12 @@ export type CategorySummary = {
   purpose: string;
   availability: "missing" | "present";
   train_normal: number;
+  validation_normal: number;
   test_normal: number;
   test_anomalous: number;
   mask_count: number;
   defect_types: readonly { id: string; test_images: number }[];
-  validation_split: "not_created";
+  validation_split: "not_created" | "created" | "invalid";
 };
 
 export type DatasetCatalog = {
