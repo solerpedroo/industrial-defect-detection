@@ -1,4 +1,4 @@
-# Architecture — Wave 6 calibrated inspection
+# Architecture — Wave 7 comparison
 
 ## Boundary map
 
@@ -334,7 +334,7 @@ are base64 PNGs at the same model resolution, not original coordinates. Heat
 colors use fixed [0,2×pixel threshold], with zero/nonzero intensity for threshold
 zero. Display saturation does not normalize raw scores or imply severity.
 The existing compare transport preflights both installed pairs and reuses one
-decoded image, without introducing a saved-experiment comparison dashboard.
+decoded image. Wave 7 consumes this transport for live side-by-side results.
 
 `inference_ms` covers synchronized prediction/preprocessing, not decode/encode,
 load or queue waiting. `request_ms` includes decode/queued work/PNG rendering
@@ -350,6 +350,29 @@ limitations are explicit. Playwright tests exercise actual models/API, PNG
 downloads, cleanup and stale response guards; production-test API URLs must be
 supplied at build time. Existing services are preserved through alternate ports.
 
+## Wave 7 comparison boundary
+
+`frontend/features/comparison/` displays two installed model results from the same
+upload, with synchronized overlay opacity, calibrated decisions, latency and
+per-model provenance. It derives selections/readiness from catalogs, rejects
+identical choices and aborts/ignores obsolete responses. Heat colors/scores retain
+model-specific scales and model-resolution geometry.
+
+`frontend/features/experiments/report.ts` projects a locally selected completed
+Wave 5 JSON (16 MiB maximum) into a read-only metric table. It validates completion,
+schema, catalog IDs, coverage, shared ordered test IDs/labels, finite values/null
+reasons and calibration consistency. No numerical computation, checkpoint or
+dataset access occurs. Validation is structural, not provenance authentication.
+Reports stay in browser memory; replacement/error/unmount invalidates older reads.
+Saved categories and installed live categories are independent.
+
+The table exposes test split, synthetic/partial scope, seed, resolution, warmup,
+device and hashes; CSV exports only the selected category with recorded values,
+null reasons, model/artifact identity and operating points. CSV fields are escaped
+and formula prefixes neutralized. No dependency, endpoint or persistence was added.
+Actual tiny synthetic evaluation reports and real-model API results exercise both
+browser paths. Real-data scientific acceptance remains open (ADR-014).
+
 ## What each wave adds
 
 | Wave | Addition |
@@ -360,6 +383,6 @@ supplied at build time. Existing services are preserved through alternate ports.
 | 4 | Implemented frozen PatchCore adapter, memory artifacts and shared `AnomalyPredictor`; CPU synthetic/pretrained smoke evidence |
 | 5 | Implemented exact metrics, normal-validation thresholds and offline JSON/CSV experiment A; real-MVTec benchmark pending |
 | 6 | Implemented trusted calibrated HTTP serving, heatmap/overlay/mask/reconstruction and downloads; synthetic real-model browser evidence |
-| 7 | Comparison of saved experiment artifacts |
+| 7 | Implemented same-upload model comparison and local saved metrics/category filter/CSV; synthetic browser evidence |
 | 8 | Report export and experiments B and C |
 | 9 | Deploy, demo, acceptance evidence |
