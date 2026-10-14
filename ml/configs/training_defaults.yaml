@@ -1,0 +1,25 @@
+# Starting point for an RTX 3050 6 GB notebook. Not a tuned optimum.
+seed: 42
+image_size: 256
+categories:
+  - bottle
+  - leather
+  - metal_nut
+autoencoder:
+  batch_size: 8
+  max_epochs: 50
+  early_stopping_patience: 10
+  optimizer: adam
+  learning_rate: 0.001
+  loss: mse
+patchcore:
+  backbone: resnet18
+  layers:
+    - layer2
+    - layer3
+  coreset_sampling_ratio: 0.01
+normalization:
+  # ImageNet statistics for the ResNet-18 backbone. The autoencoder may
+  # override these when Wave 3 documents its own tensor contract.
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
