@@ -5,7 +5,7 @@ images: a convolutional autoencoder and PatchCore, pixel-level localization,
 and reproducible comparisons on MVTec AD.
 
 **Stack:** Next.js (TypeScript) · FastAPI · PyTorch (from Wave 3) · Anomalib (from Wave 4)  
-**Status:** Waves 1–3 data, preprocessing and offline Autoencoder implemented with synthetic CPU tests.
+**Status:** Waves 1–4 data, preprocessing, offline Autoencoder and PatchCore implemented with synthetic CPU tests.
 Real MVTec preparation and live HTTP heatmaps are pending. See [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md).
 
 ## What this repository does today
@@ -18,6 +18,8 @@ Real MVTec preparation and live HTTP heatmaps are pending. See [`docs/mvp-accept
 - Provides grayscale, synchronized mask geometry and before/after preview helpers
 - Trains an offline normal-only Autoencoder with Adam/MSE and early stopping
 - Reloads trusted best checkpoints to produce reconstructions and error maps
+- Builds frozen pretrained ResNet-18 PatchCore coresets from normal fit images
+- Reloads self-contained PatchCore artifacts offline to produce raw scores/maps
 - Validates inspection uploads and reports that no checkpoint is ready yet
 - Dashboard pages: Overview, Datasets, Inference Lab, Experiments, Comparison
 
@@ -78,7 +80,7 @@ Preprocessing uses `ml.preprocessing.load_preprocess_config(category_id)` and
 float32, with display RGB pixels and JSON-safe provenance in the same result.
 Sizes/statistics come from YAML; all category flip permissions start disabled.
 See the [preprocessing contract](docs/architecture.md#shared-preprocessing).
-Offline Autoencoder consumers are implemented; PatchCore and HTTP serving remain planned.
+Both offline model consumers are implemented; HTTP serving remains planned.
 
 ## Offline Autoencoder
 
@@ -115,14 +117,63 @@ error_map = prediction.anomaly_map          # HW channel-mean squared RGB error.
 The score is the map's spatial mean. No defect decision is made before Wave 5
 calibrates a threshold on validation data. The web catalog remains `planned`.
 
+## Offline PatchCore
+
+Install compatible CPU wheels first, then the optional model packages:
+
+```bash
+.venv/bin/python -m pip install "torch>=2.10,<2.11" "torchvision>=0.25,<0.26" --index-url https://download.pytorch.org/whl/cpu
+.venv/bin/python -m pip install -e "./backend[dev,training,patchcore]"
+.venv/bin/python scripts/build_patchcore.py --category bottle --output-dir checkpoints/bottle-patchcore-001
+```
+
+Anomalib 2.7.0 supplies the low-level PatchCore model, not its trainer or automatic
+calibration. The first pretrained run retrieves public `timm/resnet18.a1_in1k`
+weights into the local cache. The backbone remains frozen/eval; only normal fit
+images populate memory. Manifest validation hashes normal held-out files but
+never decodes their pixels. Official test images and masks are not opened.
+
+ImageNet RGB normalization and defaults come from YAML. Overrides include
+`--image-size` (multiple of 32), `--batch-size`, `--seed`, `--coreset-ratio`,
+`--num-neighbors`, `--max-patches` and `--device`. Too many patches or too few
+coreset neighbors fail explicitly; the builder never silently downsamples.
+The patch budget bounds count, not guaranteed RAM/VRAM or runtime. K-center
+sampling can be expensive at full resolution. `--no-pretrained` is explicit
+random-weight regression mode, not an industrial pretrained experiment.
+
+Each new ignored/external run writes `metadata.json` and publishes completed
+`memory.pt` last. It records config/source hashes, seed, versions, frozen backbone
+digest, memory dimensions and hardware. Reload includes all backbone weights and
+does not retrieve pretrained weights again:
+
+```python
+from pathlib import Path
+from ml.models.patchcore import load_patchcore
+
+run = Path("checkpoints/bottle-patchcore-001")
+predictor = load_patchcore(run / "memory.pt", trusted_root=run)
+prediction = predictor.predict(rgb_uint8)
+score = prediction.score             # Raw weighted maximum-patch distance.
+anomaly_map = prediction.anomaly_map  # Square HW float32 at model resolution.
+```
+
+Both predictors implement `ml.models.AnomalyPredictor` and return an
+`AnomalyPrediction`. PatchCore distances are unbounded and are not numerically
+comparable to Autoencoder MSE. There is no calibrated threshold or defect label.
+Only load locally trusted artifacts, never uploaded checkpoints. Synthetic CPU
+tests include a real pretrained smoke, not real-MVTec or CUDA acceptance.
+Upstream TorchScript/Python 3.14 and deprecated-import warnings remain visible.
+
 ## Quality checks
 
-The complete Python suite requires the training extra above. API-only operation
+The complete Python suite requires both `training` and `patchcore` extras above. API-only operation
 still uses the lightweight `backend[dev]` installation from Quick start.
 
 ```bash
 .venv/bin/ruff check --config backend/pyproject.toml backend ml scripts
 .venv/bin/pytest backend
+# Optional real pretrained-weight smoke (initial run may download public weights):
+PATCHCORE_PRETRAINED_SMOKE=1 .venv/bin/pytest backend/tests/test_patchcore.py -q
 cd frontend && npm run lint && npm run test && npm run build
 cd frontend && npx playwright install chromium && npm run test:e2e
 ```
