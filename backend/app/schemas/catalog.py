@@ -65,3 +65,9 @@ class ExperimentProtocol(BaseModel):
 
 class ExperimentsResponse(BaseModel):
     experiments: list[ExperimentProtocol]
+
+
+class ReportResponse(BaseModel):
+    experiment_id: str
+    markdown: str
+    figures: list[str]
