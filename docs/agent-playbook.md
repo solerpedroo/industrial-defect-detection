@@ -28,7 +28,7 @@ Parallelize independent model packages and tests only after the Planner assigns 
 | --- | --- | --- | --- |
 | 0 | done | `wave-0-contract-baseline.md` | 2026-10-14 |
 | 1 | implemented; real-data gate open | `wave-1-dataset.md` | 2026-10-14 |
-| 2 | proposed | `wave-2-preprocessing.md` | — |
+| 2 | done (engineering; consumers pending) | `wave-2-preprocessing.md` | 2026-10-14 |
 | 3 | proposed | `wave-3-autoencoder.md` | — |
 | 4 | proposed | `wave-4-patchcore.md` | — |
 | 5 | proposed | `wave-5-evaluation.md` | — |
