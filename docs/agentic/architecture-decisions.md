@@ -82,3 +82,31 @@ chat context; implementation details belong in task cards.
   the expected directory layout and the license.
 - **Consequence:** Tests use synthetic arrays. A pull request that adds dataset
   images is rejected.
+
+## ADR-008 — Audited, deterministic normal-only split manifests
+
+- **Status:** accepted
+- **Date:** 2026-10-14
+- **Decision:** Wave 1 stores versioned JSON split manifests under
+  `ml/data/splits/<category>.json`. IDs are dataset-root-relative POSIX paths.
+  The seed and validation fraction select only sorted `train/good` IDs using
+  SHA-256 ranking of seed and ID; validation size is `ceil(n * fraction)`.
+  Both partitions must be nonempty. Every normal training image has a raw-file
+  SHA-256 checksum. No absolute dataset path, image bytes, or test labels enter
+  the manifest. Creation requires a successful integrity audit first.
+- **Integrity:** Decode images fully; check mask pairing, size and binary values.
+  Compare RGB pixel hashes (including spatial dimensions) to catch images copied
+  between official train/test or repeated within train even under a different
+  encoding. Repeated test images do not influence the normal split. Audit reads
+  of test pixels/masks are exclusively integrity checks, never threshold tuning.
+  Symlinks and unexpected tree entries are rejected. Source files are never moved
+  or deleted. Atomic writes refuse an existing manifest unless explicitly replaced.
+- **API consequence:** Existing dataset summaries add `validation_normal` and
+  allow `validation_split` values `not_created`, `created`, and `invalid`.
+  With a valid manifest, `train_normal` counts only retained fit images. Otherwise
+  it counts available official training images, with zero validation images.
+  A malformed, mismatched, or stale training manifest is `invalid`; HTTP reads
+  never create or repair manifests. Dataset availability remains a directory
+  presence signal, not an integrity certificate.
+- **Scope:** No new endpoint, dependency, tensor preprocessing, or model. The
+  existing typed summary and dataset view change with the API contract.
