@@ -13,7 +13,7 @@ Wave 2 engineering is implemented and reviewed: the full Python suite has
 121 passing tests, including 49 preprocessing cases. The user authorized this
 synthetic-data continuation while real-MVTec preparation remains open. A shared
 stage-aware function and upload-decoder compatibility are verified. Wave 3 now
-adds Autoencoder consumers and Wave 4 adds PatchCore; full integration still awaits HTTP
+adds Autoencoder consumers, Wave 4 adds PatchCore, and Wave 6 adds optional HTTP
 serving. See [`Wave 2 evidence`](agentic/tasks/wave-2-preprocessing.md).
 
 Wave 3 integrates the shared pipeline into offline Autoencoder fitting and
@@ -42,17 +42,26 @@ No real-MVTec results are claimed; CUDA,
 HTTP serving and experiment A acceptance on licensed data remain open. See
 [`Wave 5 evidence`](agentic/tasks/wave-5-evaluation.md).
 
+Wave 6 implements startup-validated artifact/calibration serving, runtime category
+readiness and upload-to-result UI with fixed-scale heatmap, mask/reconstruction,
+opacity and PNG downloads. Evidence includes 38 runtime cases and three browser
+flows using actual tiny synthetic models/API, plus independent review. Uninstalled
+pairs retain 501; synthetic serving requires explicit opt-in and a visible warning.
+Canonical model defaults remain planned. Real-MVTec quality and CUDA acceptance
+remain open; synthetic HTTP success is not industrial readiness. See
+[`Wave 6 evidence`](agentic/tasks/wave-6-inference-ui.md).
+
 | Criterion | Wave | Status |
 | --- | --- | --- |
 | Monorepo, catalogs, API shell, dashboard shell, CI | 0 | done |
 | Bottle, Leather, and Metal Nut prepared locally | 1 | open |
 | Train, validation, and official test isolated | 1 | open |
-| Recorded preprocessing shared by train and inference | 2 | Both offline models integrated; HTTP pending |
+| Recorded preprocessing shared by train and inference | 2 | Both offline/HTTP model families integrated; real-data gate open |
 | Autoencoder trains and writes reconstruction maps | 3 | implemented; real-data acceptance open |
 | PatchCore builds a memory and writes anomaly maps | 4 | implemented; real-data acceptance open |
 | Image-level and pixel-level metrics | 5 | implemented; real-MVTec experiment A open |
 | Thresholds chosen without the official test split | 5 | implemented offline; real-data calibration open |
-| UI loads an image and a compatible model | 6 | open |
+| UI loads an image and a compatible model | 6 | implemented; synthetic real-model browser evidence; real-data gate open |
 | Dashboard shows quantitative and visual comparison | 7 | open |
 | Results export as Markdown, CSV, JSON, or PNG | 8 | open |
 | Essential modules covered by tests | 9 | open |
