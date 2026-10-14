@@ -30,6 +30,8 @@ export type ModelCard = {
   status: "planned" | "ready";
   backbone: string | null;
   description: string;
+  ready_categories: readonly string[];
+  synthetic_categories: readonly string[];
 };
 
 export type ModelsResponse = {
@@ -53,4 +55,33 @@ export type ExperimentsResponse = {
 export type HealthResponse = {
   status: "ok";
   api_version: string;
+};
+
+export type InferenceResponse = {
+  model_id: string;
+  category_id: string;
+  score: number;
+  label: "normal" | "anomalous";
+  threshold: number;
+  pixel_threshold: number;
+  input_png: string;
+  anomaly_map_png: string;
+  overlay_png: string;
+  mask_png: string;
+  reconstruction_png: string | null;
+  display_max: number;
+  map_width: number;
+  map_height: number;
+  data_kind: "synthetic" | "mvtec_ad";
+  artifact_sha256: string;
+  calibration_sha256: string;
+  config_hash: string;
+  inference_ms: number;
+  request_ms: number;
+};
+
+export type CompareResponse = {
+  category_id: string;
+  results: readonly InferenceResponse[];
+  request_ms: number;
 };
