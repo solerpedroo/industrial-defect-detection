@@ -5,7 +5,7 @@ images: a convolutional autoencoder and PatchCore, pixel-level localization,
 and reproducible comparisons on MVTec AD.
 
 **Stack:** Next.js (TypeScript) · FastAPI · PyTorch (from Wave 3) · Anomalib (from Wave 4)  
-**Status:** Waves 1–6 data, offline models/evaluation and calibrated HTTP inspection implemented with synthetic CPU tests.
+**Status:** Waves 1–7 data, offline models/evaluation, calibrated HTTP inspection and comparison implemented with synthetic CPU tests.
 Real MVTec preparation, benchmark and CUDA acceptance remain pending. See [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md).
 
 ## What this repository does today
@@ -24,6 +24,8 @@ Real MVTec preparation, benchmark and CUDA acceptance remain pending. See [`docs
 - Exports image/pixel metrics and documented compute measurements as JSON/CSV
 - Serves installed category/model pairs with frozen thresholds and ephemeral PNG results
 - Shows heatmaps, adjustable overlays, reconstruction and downloadable masks
+- Compares two installed models on one upload and opens saved experiment metrics locally
+- Filters saved comparisons by category and exports their values/provenance as CSV
 - Dashboard pages: Overview, Datasets, Inference Lab, Experiments, Comparison
 
 Training does not run inside the API. Offline experiment A is runnable; real-MVTec
@@ -280,6 +282,29 @@ when selected, but remains unverified. `ALLOWED_ORIGINS` must include your UI
 origin if it differs from the default localhost ports. Do not expose serving
 configuration through `NEXT_PUBLIC_*` variables.
 
+## Compare models and saved experiments
+
+Open **Comparison** and select two distinct models installed for the same category.
+One upload produces two heatmaps, scores, frozen thresholds, inference timings
+and downloadable masks. The overlay slider controls both images. Each heatmap
+retains its own calibration scale; raw scores/colors do not rank model quality.
+Changing the upload or selectors clears previous results, including delayed calls.
+
+In **Saved experiment metrics**, select the completed `results.json` produced by
+the offline evaluation command above. The reader accepts up to 16 MiB, checks
+schema/completion, catalog membership, row coverage, test IDs/labels, numbers and
+calibration consistency, and keeps the report in browser memory. It does not
+upload the file, authenticate its provenance or recalculate metrics. Select a
+saved category and **Export visible table CSV** to download those recorded values
+with hashes, seed, thresholds and compute context. Undefined metrics stay blank
+in CSV with their reason, and appear as N/A in the table.
+
+Saved test metrics are independent of the current upload and installed model
+snapshot. Synthetic/partial reports remain explicitly labeled. Timing excludes
+file decoding/model loading; CPU peak memory is a process high-water mark, not
+isolated model usage. A report larger than the explicit limit requires a later
+pagination/serving design, not silent truncation. No reports endpoint was added.
+
 ## Quality checks
 
 The complete Python suite requires both `training` and `patchcore` extras above. API-only operation
@@ -297,7 +322,9 @@ cd frontend && npx playwright install chromium && npm run test:e2e
 Browser tests start an isolated tiny synthetic real-model API fixture (both model
 extras required), not a mock predictor. No pretrained download is needed. Use
 `PLAYWRIGHT_REAL_INFERENCE=0` only for a shell-only lightweight check; inference
-flows are then skipped. To preserve already running servers, choose free ports:
+and comparison flows are then skipped. The fixture also supplies a completed
+synthetic evaluation JSON under ignored `frontend/.next/` for local-file tests.
+To preserve already running servers, choose free ports:
 
 ```bash
 cd frontend
