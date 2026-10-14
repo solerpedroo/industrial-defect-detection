@@ -1,6 +1,10 @@
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+import time
 
-from app.core.images import ImageValidationError, decode_upload
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from starlette.concurrency import run_in_threadpool
+
+from app.core.images import MAX_UPLOAD_BYTES, DecodedImage, ImageValidationError, decode_upload
+from app.inference import ServingRegistry
 from app.schemas.catalog import (
     CategorySummary,
     DatasetCatalogResponse,
@@ -9,14 +13,17 @@ from app.schemas.catalog import (
     HealthResponse,
     ModelsResponse,
 )
+from app.schemas.inference import CompareResponse, InferenceResponse
 from app.services.catalog import (
     category_summary,
     dataset_catalog,
     experiment,
     experiments,
+    has_category,
     model_card,
     models,
 )
+from app.visualization import render_prediction
 
 router = APIRouter(prefix="/api")
 API_VERSION = "0.1.0"
@@ -45,9 +52,22 @@ def dataset_summary(category_id: str) -> CategorySummary:
 
 
 @router.get("/models", response_model=ModelsResponse, tags=["models"])
-def list_models() -> ModelsResponse:
+def list_models(request: Request) -> ModelsResponse:
     """Return catalog models and whether an artifact can be served."""
-    return ModelsResponse(models=models())
+    registry = request.app.state.inference
+    cards = []
+    for model in models():
+        ready = registry.categories(model.id)
+        cards.append(
+            model.model_copy(
+                update={
+                    "status": "ready" if ready else "planned",
+                    "ready_categories": ready,
+                    "synthetic_categories": registry.categories(model.id, synthetic=True),
+                }
+            )
+        )
+    return ModelsResponse(models=cards)
 
 
 @router.get("/experiments", response_model=ExperimentsResponse, tags=["experiments"])
@@ -76,39 +96,75 @@ def report(experiment_id: str) -> None:
     )
 
 
-@router.post("/inference", tags=["inference"])
+@router.post("/inference", response_model=InferenceResponse, tags=["inference"])
 async def inference(
+    request: Request,
     image: UploadFile = File(...),
     category_id: str = Form(...),
     model_id: str = Form(...),
-) -> None:
-    """Validate an inspection request. Scoring waits for a ready artifact."""
-    _validate_inference_request(await image.read(), category_id, model_id)
-    raise HTTPException(status_code=501, detail=NOT_READY)
+) -> InferenceResponse:
+    """Serve one cached calibrated predictor; never fit, reload or recalibrate."""
+    started = time.perf_counter()
+    raw_bytes = await _read_upload(image)
+    decoded = await run_in_threadpool(_validate_inference_request, raw_bytes, category_id, model_id)
+    registry = request.app.state.inference
+    _require_installed(registry, category_id, model_id)
+    try:
+        result = await run_in_threadpool(_serve, registry, decoded, category_id, model_id)
+    except (ValueError, RuntimeError) as error:
+        raise HTTPException(
+            status_code=503, detail="Inference could not produce a valid result."
+        ) from error
+    return InferenceResponse(**result, request_ms=(time.perf_counter() - started) * 1000)
 
 
-@router.post("/inference/compare", tags=["inference"])
+@router.post("/inference/compare", response_model=CompareResponse, tags=["inference"])
 async def compare_inference(
+    request: Request,
     image: UploadFile = File(...),
     category_id: str = Form(...),
     model_a: str = Form(...),
     model_b: str = Form(...),
-) -> None:
-    """Validate a two-model request. Scoring waits for ready artifacts."""
+) -> CompareResponse:
+    """Reuse installed predictors for one ephemeral upload, not saved experiments."""
+    started = time.perf_counter()
+    raw_bytes = await _read_upload(image)
     if model_a == model_b:
         raise HTTPException(status_code=422, detail="Choose two different models to compare.")
-    raw_bytes = await image.read()
-    _validate_inference_request(raw_bytes, category_id, model_a)
+    decoded = await run_in_threadpool(_validate_inference_request, raw_bytes, category_id, model_a)
     _require_model(model_b)
-    raise HTTPException(status_code=501, detail=NOT_READY)
+    registry = request.app.state.inference
+    for model_id in (model_a, model_b):
+        _require_installed(registry, category_id, model_id)
+    try:
+        results = await run_in_threadpool(
+            lambda: [_serve(registry, decoded, category_id, model) for model in (model_a, model_b)]
+        )
+    except (ValueError, RuntimeError) as error:
+        raise HTTPException(
+            status_code=503, detail="Inference could not produce valid results."
+        ) from error
+    elapsed = (time.perf_counter() - started) * 1000
+    return CompareResponse(
+        category_id=category_id,
+        request_ms=elapsed,
+        results=[InferenceResponse(**result, request_ms=elapsed) for result in results],
+    )
 
 
-def _validate_inference_request(raw_bytes: bytes, category_id: str, model_id: str) -> None:
-    if category_summary(category_id) is None:
+async def _read_upload(image: UploadFile) -> bytes:
+    try:
+        return await image.read(MAX_UPLOAD_BYTES + 1)
+    finally:
+        await image.close()
+
+
+def _validate_inference_request(raw_bytes: bytes, category_id: str, model_id: str) -> DecodedImage:
+    if not has_category(category_id):
         raise HTTPException(status_code=422, detail=f"Unknown category '{category_id}'.")
     _require_model(model_id)
     try:
-        decode_upload(raw_bytes)
+        return decode_upload(raw_bytes)
     except ImageValidationError as error:
         raise HTTPException(status_code=error.status_code, detail=str(error)) from error
 
@@ -116,3 +172,33 @@ def _validate_inference_request(raw_bytes: bytes, category_id: str, model_id: st
 def _require_model(model_id: str) -> None:
     if model_card(model_id) is None:
         raise HTTPException(status_code=422, detail=f"Unknown model '{model_id}'.")
+
+
+def _require_installed(registry: ServingRegistry, category: str, model: str):
+    try:
+        registry.require(category, model)
+    except LookupError as error:
+        raise HTTPException(status_code=501, detail=NOT_READY) from error
+
+
+def _serve(registry: ServingRegistry, decoded: DecodedImage, category: str, model: str) -> dict:
+    prediction, installed, elapsed = registry.predict(category, model, decoded.image)
+    rendered = render_prediction(
+        prediction, size=installed.size, pixel_threshold=installed.pixel_threshold
+    )
+    return {
+        "model_id": model,
+        "category_id": category,
+        "score": float(prediction.score),
+        "label": "anomalous" if prediction.score > installed.image_threshold else "normal",
+        "threshold": installed.image_threshold,
+        "pixel_threshold": installed.pixel_threshold,
+        "map_width": installed.size,
+        "map_height": installed.size,
+        "data_kind": installed.data_kind,
+        "artifact_sha256": installed.artifact_sha256,
+        "calibration_sha256": installed.calibration_sha256,
+        "config_hash": installed.config_hash,
+        "inference_ms": elapsed,
+        **rendered,
+    }
