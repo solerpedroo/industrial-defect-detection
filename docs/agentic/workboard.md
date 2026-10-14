@@ -3,7 +3,7 @@
 | Wave | Task card | Status | Notes |
 | --- | --- | --- | --- |
 | 0 | `tasks/wave-0-contract-baseline.md` | done | Foundation scaffold |
-| 1 | `tasks/wave-1-dataset.md` | proposed | Local MVTec loader and splits |
+| 1 | `tasks/wave-1-dataset.md` | implemented; real-data gate open | Codex; reviewed; 72 Python / 3 frontend / 1 browser tests pass; licensed MVTec copy absent |
 | 2 | `tasks/wave-2-preprocessing.md` | proposed | Recorded preprocess pipeline |
 | 3 | `tasks/wave-3-autoencoder.md` | proposed | PyTorch reconstruction model |
 | 4 | `tasks/wave-4-patchcore.md` | proposed | Anomalib adapter |
