@@ -66,6 +66,11 @@ and an explicit block on retraining, because fit manifests still require the
 full normal inventory. Scores are not described as physical severity. Real-data
 and CUDA acceptance remain open. See [`Wave 8 evidence`](agentic/tasks/wave-8-reports.md).
 
+Wave 9 documents an English reproduction path, a demo storyboard, and a deploy
+path whose default image does not copy the dataset or checkpoints. A repository
+test checks that Git tracks neither images nor weight files. Real-data, CUDA,
+and experiment C retraining stay open. See [`Wave 9 evidence`](agentic/tasks/wave-9-ship.md).
+
 | Criterion | Wave | Status |
 | --- | --- | --- |
 | Monorepo, catalogs, API shell, dashboard shell, CI | 0 | done |
@@ -79,8 +84,8 @@ and CUDA acceptance remain open. See [`Wave 8 evidence`](agentic/tasks/wave-8-re
 | UI loads an image and a compatible model | 6 | implemented; synthetic real-model browser evidence; real-data gate open |
 | Dashboard shows quantitative and visual comparison | 7 | implemented; same-upload maps plus local saved metrics/CSV; synthetic evidence only |
 | Results export as Markdown, CSV, JSON, or PNG | 8 | implemented offline; experiment C metrics blocked; real-data gate open |
-| Essential modules covered by tests | 9 | open |
-| README explains how to reproduce experiments | 9 | open |
+| Essential modules covered by tests | 9 | local commands recorded on the Wave 9 card; real-data cases stay outside this row |
+| README explains how to reproduce experiments | 9 | README quick start, offline evaluation, and report packages |
 | Three comparative experiments documented | 8 | A measured offline; B scoring implemented; C membership plan only |
 
 Reference: [`project-scope.md`](project-scope.md) §10.
