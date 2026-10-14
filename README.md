@@ -5,7 +5,7 @@ images: a convolutional autoencoder and PatchCore, pixel-level localization,
 and reproducible comparisons on MVTec AD.
 
 **Stack:** Next.js (TypeScript) · FastAPI · PyTorch (from Wave 3) · Anomalib (from Wave 4)  
-**Status:** Wave 1 dataset pipeline implemented and tested on synthetic trees.
+**Status:** Waves 1–2 dataset and preprocessing pipelines implemented with synthetic tests.
 Real MVTec preparation is pending. Training and live heatmaps start in later
 waves. See [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md).
 
@@ -15,6 +15,8 @@ waves. See [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md).
 - Audits local MVTec images, mask pairs, corrupt files and duplicate content
 - Creates reproducible normal-only validation manifests with source checksums
 - Shows fit, validation, test and mask counts plus split validity in Datasets
+- Shares recorded RGB resize/normalization across train and inference stage paths
+- Provides grayscale, synchronized mask geometry and before/after preview helpers
 - Validates inspection uploads and reports that no checkpoint is ready yet
 - Dashboard pages: Overview, Datasets, Inference Lab, Experiments, Comparison
 
@@ -69,6 +71,13 @@ The audit returns a nonzero exit for missing/invalid data. The fraction is an
 explicit experiment choice; the seed comes from the YAML training defaults.
 Manifests are gitignored under `ml/data/splits/`. Existing manifests require
 `--overwrite` to replace, and changed training files invalidate the split.
+
+Preprocessing uses `ml.preprocessing.load_preprocess_config(category_id)` and
+`apply_preprocess(rgb_uint8, config, stage="inference")`. The output is CHW
+float32, with display RGB pixels and JSON-safe provenance in the same result.
+Sizes/statistics come from YAML; all category flip permissions start disabled.
+See the [preprocessing contract](docs/architecture.md#shared-preprocessing).
+Actual model training and inference integration arrive in Waves 3 and 4.
 
 ## Quality checks
 
