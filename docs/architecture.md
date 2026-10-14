@@ -1,4 +1,4 @@
-# Architecture — Wave 3 offline autoencoder
+# Architecture — Wave 4 offline model pair
 
 ## Boundary map
 
@@ -7,7 +7,7 @@ Next.js UI  →  typed API client  →  FastAPI routes  →  catalogs / inferenc
                  presentation         transport            contract                      numerical logic
 ```
 
-The frontend never scores anomalies. FastAPI validates uploads, category ids, and model ids. `ml/` owns datasets, preprocessing and offline autoencoder training/prediction. PatchCore and metrics remain future work. HTTP handlers never start training.
+The frontend never scores anomalies. FastAPI validates uploads, category ids, and model ids. `ml/` owns datasets, preprocessing and offline Autoencoder/PatchCore fitting and prediction. Metrics remain future work. HTTP handlers never start training.
 
 ## Components
 
@@ -19,7 +19,7 @@ There is no database. Experiment records will be YAML and JSON files.
 
 ## Image convention
 
-Per ADR-004, decoded color images are contiguous RGB `numpy.ndarray` values with shape `(height, width, 3)`, `uint8`, range `[0, 255]`. Alpha is discarded at decode. Shared preprocessing creates CHW float32 arrays. Wave 3 converts them to PyTorch at the autoencoder boundary using model-specific unit-interval normalization.
+Per ADR-004, decoded color images are contiguous RGB `numpy.ndarray` values with shape `(height, width, 3)`, `uint8`, range `[0, 255]`. Alpha is discarded at decode. Shared preprocessing creates CHW float32 arrays. Waves 3/4 convert them to PyTorch at model boundaries using unit-interval normalization for Autoencoder and ImageNet normalization for PatchCore.
 
 ## Catalogs
 
@@ -126,8 +126,8 @@ metadata = result.record         # Persist beside experiment/checkpoint artifact
 ```
 
 The shared paths have synthetic and upload-decoder integration evidence. Wave 3
-adds actual offline autoencoder training and prediction consumers. PatchCore and
-HTTP model consumers remain unimplemented. The user authorized engineering while
+adds actual offline autoencoder training and prediction consumers; Wave 4 adds
+PatchCore. HTTP model consumers remain unimplemented. The user authorized engineering while
 the licensed real-MVTec gate remains open; synthetic checks do not certify real
 industrial detection performance.
 
@@ -137,7 +137,7 @@ PyTorch 2.10 is the optional `training` extra. Importing the web application doe
 not import torch. `ml/training/config.py` reads seed, batch size, epochs, patience,
 learning rate and encoder widths from the canonical YAML. Autoencoder-specific
 normalization is mean zero/std one in RGB unit-interval space, distinct from the
-unchanged ImageNet defaults for the future feature backbone. Experimental overrides
+unchanged ImageNet defaults for the PatchCore feature backbone. Experimental overrides
 are recorded and cannot override the canonical category flip permission in fit.
 
 `ConvolutionalAutoencoder` has three stride-2 Conv2d/ReLU blocks and three mirrored
@@ -186,6 +186,65 @@ as score, prepared display RGB and preprocessing provenance. These are at model
 resolution, not original-resolution localization. There is no threshold or label.
 The catalog and HTTP inference stay `planned`/501 until their serving gate.
 
+## Offline PatchCore
+
+ADR-011 adds optional Anomalib 2.7.0, torchvision 0.25.x and timm 1.0.x with
+torch 2.10.x. The low-level `PatchcoreModel` avoids Lightning's dataset,
+postprocessing and calibration paths. Importing the API still imports neither
+torch nor Anomalib. `PatchcoreConfig` loads canonical defaults and records all
+overrides. ResNet-18 layer2/layer3 is pretrained by default; random initialization
+is an explicitly recorded regression-only option. Shared preprocessing resizes
+RGB to a square multiple of 32 and applies ImageNet mean/std. Fit augmentation
+is disabled so memory construction and prediction use the same transform.
+
+`build_patchcore_memory` checks a Wave 1 manifest and decodes only retained normal
+fit IDs. It hashes the exact bytes decoded, extracts pooled concatenated frozen
+features and builds Anomalib's seeded k-center coreset. Backbone parameters never
+require gradients; its feature extractor stays eval, including BatchNorm, while
+the model's training-mode forward collects embeddings. A before/after backbone
+digest checks that memory building did not change pretrained state. Validation
+normal files are hashed during manifest checks, but their pixels are not decoded;
+official test images/masks are never opened. Final source checks reject drift.
+
+Preflight patch count must fit the explicit budget, and
+`floor(patch_count * coreset_sampling_ratio) >= num_neighbors`. Neither the ratio
+nor fit selection silently changes to fit available resources. The count budget
+does not guarantee memory/time capacity: feature storage, projected distances
+and iterative k-center selection can be expensive. Seeded torch, NumPy and Python
+RNGs, float32 default dtype and deterministic/backend flags are scoped/restored.
+Repeatability is verified within one CPU/library environment, not across devices
+or releases. CUDA availability is checked, but CUDA execution remains unverified.
+
+Every run uses a new ignored/external directory outside the dataset. `memory.pt`
+contains the entire extracted backbone state, coreset and primitive provenance.
+Metadata includes config/preprocessing hashes, the normal split/checksums,
+patch/memory counts and dimension, pretrained source/backbone digest, seed,
+versions, device/hardware and duration. The completed checkpoint is staged;
+`metadata.json` with its checksum publishes first, then `memory.pt` last. Failure
+does not publish a completed checkpoint. The directory can remain for diagnosis.
+
+`load_patchcore(..., trusted_root=...)` restricts regular non-symlink `.pt` paths
+under an explicit trusted root, uses CPU `weights_only=True`, and checks schema,
+completion/config hash, memory dimensions/count, state keys/shapes/dtypes,
+finiteness and backbone digest. It reconstructs the backend with pretrained
+retrieval disabled and restores stored weights/memory. Artifacts are locally
+trusted inputs, not a format for uploaded untrusted checkpoints.
+
+Both predictors implement `AnomalyPredictor.predict(RGB HWC uint8)` and return
+`AnomalyPrediction`: a finite nonnegative scalar and square HW float32 map at
+model resolution. PatchCore uses raw feature distances without an upper bound.
+Its score is Anomalib's weighted maximum-patch nearest-neighbor score (plain
+maximum for one neighbor); its map is interpolated/smoothed, so score is not the
+map mean or necessarily its maximum. Autoencoder uses mean squared error. These
+raw scales cannot be compared directly or interpreted as severity/probability.
+No threshold, label, calibration or HTTP readiness is added in Wave 4.
+
+Synthetic CPU evidence covers the real library, leakage guards, frozen state,
+reproducibility, publication failures and offline reload. An optional smoke also
+loads actual pretrained weights; CI's default tests use explicit random weights
+without network retrieval. Upstream TorchScript/Python 3.14 and deprecated-import
+warnings are retained. Real-MVTec benchmark and CUDA acceptance remain open.
+
 ## Inference boundary
 
 `POST /api/inference` and `POST /api/inference/compare` accept multipart PNG or JPEG uploads. They reject unknown categories and models with `422`, invalid images with `400`, `413`, or `415`, and ready-looking calls with `501` until a wave marks the model `ready` and installs a loader.
@@ -199,7 +258,7 @@ Uploads are not written to disk.
 | 1 | Implemented reader, integrity checks, normal validation manifests; real-data acceptance pending |
 | 2 | Implemented shared preprocessing, mask geometry, provenance and previews; model consumers pending |
 | 3 | Implemented offline PyTorch autoencoder, best checkpoints and reconstruction maps; CPU synthetic evidence |
-| 4 | PatchCore adapter and shared `AnomalyModel` runtime |
+| 4 | Implemented frozen PatchCore adapter, memory artifacts and shared `AnomalyPredictor`; CPU synthetic/pretrained smoke evidence |
 | 5 | Metrics and validation thresholds |
 | 6 | Heatmap overlay and downloads in Inference Lab |
 | 7 | Comparison of saved experiment artifacts |
