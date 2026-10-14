@@ -1,0 +1,14 @@
+---
+description: Transport and validation rules for FastAPI endpoints.
+globs: backend/app/api/**/*.py
+alwaysApply: false
+---
+
+# FastAPI boundary
+
+- Routes decode, validate, call, and encode. They do not train models or implement metrics.
+- Validate image magic bytes, payload size, dimensions, category id, and model id before inference.
+- Return clear 4xx responses for invalid client input. Return 501 when the catalog model is not ready.
+- Keep uploads ephemeral. Do not log payloads or base64 maps.
+- Category and model ids come from the YAML catalogs.
+- Never start a training loop, subprocess shell, or checkpoint write from a route.
