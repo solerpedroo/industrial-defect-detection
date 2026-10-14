@@ -51,6 +51,14 @@ Canonical model defaults remain planned. Real-MVTec quality and CUDA acceptance
 remain open; synthetic HTTP success is not industrial readiness. See
 [`Wave 6 evidence`](agentic/tasks/wave-6-inference-ui.md).
 
+Wave 7 implements side-by-side results for one upload and a browser-only reader
+of completed Wave 5 experiment JSON. Category-filtered metric tables preserve
+undefined reasons and export recorded values/provenance as CSV. Reports are
+structurally checked, not authenticated or numerically recomputed. Tests use
+synthetic real-model API output and generated evaluator reports; real-MVTec
+benchmark and CUDA acceptance remain open. See
+[`Wave 7 evidence`](agentic/tasks/wave-7-comparison.md).
+
 | Criterion | Wave | Status |
 | --- | --- | --- |
 | Monorepo, catalogs, API shell, dashboard shell, CI | 0 | done |
@@ -62,8 +70,8 @@ remain open; synthetic HTTP success is not industrial readiness. See
 | Image-level and pixel-level metrics | 5 | implemented; real-MVTec experiment A open |
 | Thresholds chosen without the official test split | 5 | implemented offline; real-data calibration open |
 | UI loads an image and a compatible model | 6 | implemented; synthetic real-model browser evidence; real-data gate open |
-| Dashboard shows quantitative and visual comparison | 7 | open |
-| Results export as Markdown, CSV, JSON, or PNG | 8 | open |
+| Dashboard shows quantitative and visual comparison | 7 | implemented; same-upload maps plus local saved metrics/CSV; synthetic evidence only |
+| Results export as Markdown, CSV, JSON, or PNG | 8 | report package open; offline JSON/CSV, UI table CSV and inference PNG already available |
 | Essential modules covered by tests | 9 | open |
 | README explains how to reproduce experiments | 9 | open |
 | Three comparative experiments documented | 8 | open |
