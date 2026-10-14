@@ -1,4 +1,4 @@
-# Architecture — Wave 1 dataset pipeline
+# Architecture — Wave 2 recorded preprocessing
 
 ## Boundary map
 
@@ -19,7 +19,7 @@ There is no database. Experiment records will be YAML and JSON files.
 
 ## Image convention
 
-Per ADR-004, decoded color images are contiguous RGB `numpy.ndarray` values with shape `(height, width, 3)`, `uint8`, range `[0, 255]`. Alpha is discarded at decode. Model tensors (resize, normalization) are created inside `ml/preprocessing/` in a later wave.
+Per ADR-004, decoded color images are contiguous RGB `numpy.ndarray` values with shape `(height, width, 3)`, `uint8`, range `[0, 255]`. Alpha is discarded at decode. Wave 2 creates normalized CHW float32 arrays inside `ml/preprocessing/`; PyTorch tensor conversion belongs to the Wave 3 model boundary.
 
 ## Catalogs
 
@@ -76,6 +76,60 @@ catalog category is absent or invalid). Add `--create-split
 the structured report. Default categories/root and seed come from canonical YAML.
 The API uses the repository's default dataset and manifest locations.
 
+## Shared preprocessing
+
+`ml/preprocessing/config.py` loads the configured size, RGB mean/std and
+preprocessing defaults from `training_defaults.yaml`. Per-category
+`preprocessing.allow_horizontal_flip` permissions live in `categories.yaml`.
+All initial categories deny flipping. The loader rejects unknown categories,
+malformed statistics and attempts to enable unapproved flips. Explicit experiment
+configurations can be constructed or derived with `dataclasses.replace`; those
+callers are responsible for preserving the reviewed category permission. Effective
+settings, including that permission, are recorded and hashed.
+
+`apply_preprocess(image, config, stage=...)` is the only numerical path for
+`train`, `validation`, `test` and `inference`. It accepts RGB HWC uint8 [0, 255]
+and returns `PreprocessResult`:
+
+- `model_input`: contiguous `(3, size, size)` float32 values, computed as
+  `(RGB / 255 - mean) / std`. These values can be negative or exceed one.
+- `display_rgb`: square HWC uint8 RGB after resize/augmentation/grayscale, before
+  normalization, for display or reconstruction comparisons.
+- `mask`: optional square H×W uint8 0/255 labels, synchronized with image geometry.
+- `record`: JSON-safe effective configuration, schema version, SHA-256 config hash,
+  source/output shape and dtype, stage/seed, ordered operations and library versions.
+
+Images use bilinear resize; masks use nearest-neighbor. Optional Pillow L
+grayscale is replicated to RGB before normalization; different channel statistics
+can still produce different normalized channels. Resizing stretches the original
+aspect ratio to the configured square; it does not crop or pad. The record makes
+this spatial choice explicit. Inputs are never modified, including strided arrays.
+
+Only horizontal flipping is currently supported. Train augmentation requires an
+explicit seed when probability is positive and category permission is enabled.
+The local RNG draws one image/mask decision. Validation, test and inference never
+augment and reject training seeds. A later training loop must derive reproducible
+per-sample/per-epoch seeds; reusing one seed on every call repeats its decision.
+The top-level YAML seed is an experiment seed, not a hidden global RNG mutation.
+
+`preprocess_preview` calls the same function once and returns independent
+before/after display RGB arrays and masks with the same record. No PNG encoding,
+HTTP route or preview UI is added in this wave. To use the pipeline:
+
+```python
+from ml.preprocessing import apply_preprocess, load_preprocess_config
+
+config = load_preprocess_config("bottle")
+result = apply_preprocess(rgb_uint8, config, stage="inference")
+model_input = result.model_input  # torch.from_numpy conversion arrives in Wave 3.
+metadata = result.record         # Persist beside experiment/checkpoint artifacts.
+```
+
+The shared train/inference stage paths have synthetic and upload-decoder
+integration evidence. Actual model consumers are not implemented yet. The user
+authorized Wave 2 engineering while the licensed real-MVTec gate remains open;
+this does not certify real-data preparation or model behavior.
+
 ## Inference boundary
 
 `POST /api/inference` and `POST /api/inference/compare` accept multipart PNG or JPEG uploads. They reject unknown categories and models with `422`, invalid images with `400`, `413`, or `415`, and ready-looking calls with `501` until a wave marks the model `ready` and installs a loader.
@@ -87,7 +141,7 @@ Uploads are not written to disk.
 | Wave | Addition |
 | --- | --- |
 | 1 | Implemented reader, integrity checks, normal validation manifests; real-data acceptance pending |
-| 2 | Recorded preprocessing and category-safe augmentation |
+| 2 | Implemented shared preprocessing, mask geometry, provenance and previews; model consumers pending |
 | 3 | PyTorch autoencoder, checkpoints, reconstruction maps |
 | 4 | PatchCore adapter and shared `AnomalyModel` runtime |
 | 5 | Metrics and validation thresholds |
