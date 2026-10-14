@@ -1,7 +1,7 @@
 # Industrial Defect Detection — Implementation Plan
 
 **Version:** 1.0  
-**Status:** Wave 1 implementation delivered; real-data gate open → MVP
+**Status:** Waves 1–2 engineering delivered; real-data and model-integration gates open → MVP
 **Scope reference:** [project-scope.md](./project-scope.md)
 
 ---
@@ -24,6 +24,10 @@ This document defines how the project is built: wave gates, shared technical pat
 ## 3. Delivery model: waves
 
 Waves are sequential gates. The next wave starts when the previous Definition of Done is met.
+
+On 2026-10-14 the user explicitly authorized Wave 2 engineering using synthetic
+data while Wave 1 real-MVTec acceptance remains open. This exception does not
+close the real-data gate or imply model readiness; see ADR-009 and the task card.
 
 ```mermaid
 flowchart LR
