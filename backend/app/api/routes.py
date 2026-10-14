@@ -3,6 +3,7 @@ import time
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from starlette.concurrency import run_in_threadpool
 
+from app.core.config import reports_root
 from app.core.images import MAX_UPLOAD_BYTES, DecodedImage, ImageValidationError, decode_upload
 from app.inference import ServingRegistry
 from app.schemas.catalog import (
@@ -12,6 +13,7 @@ from app.schemas.catalog import (
     ExperimentsResponse,
     HealthResponse,
     ModelsResponse,
+    ReportResponse,
 )
 from app.schemas.inference import CompareResponse, InferenceResponse
 from app.services.catalog import (
@@ -23,6 +25,7 @@ from app.services.catalog import (
     model_card,
     models,
 )
+from app.services.reports import ReportNotFoundError, ReportTooLargeError, load_report
 from app.visualization import render_prediction
 
 router = APIRouter(prefix="/api")
@@ -85,15 +88,21 @@ def experiment_detail(experiment_id: str) -> ExperimentProtocol:
     return protocol
 
 
-@router.get("/reports/{experiment_id}", tags=["experiments"])
-def report(experiment_id: str) -> None:
-    """Reports are generated in Wave 8."""
+@router.get("/reports/{experiment_id}", response_model=ReportResponse, tags=["experiments"])
+def report(experiment_id: str) -> ReportResponse:
+    """Return a generated Markdown report. Does not train, score, or read the dataset."""
     if experiment(experiment_id) is None:
         raise HTTPException(status_code=404, detail=f"Unknown experiment '{experiment_id}'.")
-    raise HTTPException(
-        status_code=404,
-        detail=f"No report artifact has been generated for '{experiment_id}'.",
-    )
+    try:
+        payload = load_report(experiment_id, reports_root())
+    except ReportNotFoundError as error:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No report artifact has been generated for '{experiment_id}'.",
+        ) from error
+    except ReportTooLargeError as error:
+        raise HTTPException(status_code=413, detail=str(error)) from error
+    return ReportResponse.model_validate(payload)
 
 
 @router.post("/inference", response_model=InferenceResponse, tags=["inference"])
