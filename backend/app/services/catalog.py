@@ -54,9 +54,9 @@ def dataset_catalog() -> DatasetCatalogResponse:
 
 
 def category_summary(category_id: str) -> CategorySummary | None:
-    for category in dataset_catalog().categories:
-        if category.id == category_id:
-            return category
+    for item in _category_file()["categories"]:
+        if item["id"] == category_id:
+            return _category_summary(item)
     return None
 
 
@@ -91,6 +91,7 @@ def _category_summary(item: dict) -> CategorySummary:
         purpose=item["purpose"],
         availability=counts["availability"],
         train_normal=counts["train_normal"],
+        validation_normal=counts["validation_normal"],
         test_normal=counts["test_normal"],
         test_anomalous=counts["test_anomalous"],
         mask_count=counts["mask_count"],
