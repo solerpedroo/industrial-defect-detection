@@ -1,7 +1,7 @@
 # Industrial Defect Detection — Implementation Plan
 
 **Version:** 1.0  
-**Status:** Waves 1–3 engineering delivered; real-data, CUDA and HTTP-serving gates open → MVP
+**Status:** Waves 1–4 engineering delivered; real-data, CUDA and HTTP-serving gates open → MVP
 **Scope reference:** [project-scope.md](./project-scope.md)
 
 ---
@@ -31,6 +31,9 @@ close the real-data gate or imply model readiness; see ADR-009 and the task card
 The user subsequently authorized Wave 3. Offline Autoencoder fit/reload has
 synthetic CPU evidence; licensed MVTec, CUDA, calibrated thresholds and HTTP
 serving remain pending. ADR-010 defines this bounded extension.
+The user then authorized Wave 4: frozen PatchCore memory and offline reload are
+implemented with synthetic CPU and actual pretrained-weight smoke evidence.
+ADR-011 preserves real-data/CUDA/serving gates; Wave 5 is next, not started here.
 
 ```mermaid
 flowchart LR
@@ -128,7 +131,8 @@ Training entry points are `scripts/` and `ml/training/`. A route that starts an 
 `ml/configs/models.yaml` lists algorithms and their status (`planned` or `ready`).  
 `ml/configs/training_defaults.yaml` holds the RTX 3050 starting point.
 
-The API and the UI read these files. A model stays `planned` until its wave lands a checkpoint loader.
+The API and the UI read these files. A model stays `planned` until the serving
+gate installs a compatible HTTP loader; an offline loader alone is insufficient.
 
 ### 5.3 Image convention
 
@@ -149,9 +153,15 @@ Limits: PNG or JPEG, 10 MiB, 4096 × 4096. Bytes exist only for the request.
 Wave 0 installs FastAPI, NumPy, Pillow, and PyYAML. PyTorch arrives in Wave 3. Anomalib arrives in Wave 4. Do not add those packages early.
 
 Wave 3 uses the optional `backend[training]` extra (`torch>=2.10,<2.11`). Backend
-CI installs the official CPU wheel and `backend[dev,training]` for numerical
+CI installs the official CPU torch/torchvision wheels and
+`backend[dev,training,patchcore]` for numerical
 regressions. API-only/e2e installation stays lightweight. See README for CPU
 installation and the offline CLI. Do not label a local checkpoint as API-ready.
+
+Wave 4 adds `backend[patchcore]` with Anomalib 2.7.0, torchvision 0.25.x and timm
+1.0.x. Default CI avoids pretrained downloads; the opt-in pretrained smoke is
+recorded separately. Both offline predictors share a score/map interface, not a
+numerical score scale. Evaluation/calibration belongs exclusively to Wave 5.
 
 ## 6. Wave 0 definition of done
 
