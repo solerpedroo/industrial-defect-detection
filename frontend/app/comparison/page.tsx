@@ -13,7 +13,7 @@ export default function ComparisonPage() {
       <PageHeader
         label="Module 08"
         title="Model Comparison"
-        description="Compare the autoencoder and PatchCore on one upload. Bounding boxes, when added later, come from the anomaly mask."
+        description="Inspect one image with two calibrated models, then explore saved test metrics by category and export the visible comparison."
       />
       <ComparisonBoard />
     </>
