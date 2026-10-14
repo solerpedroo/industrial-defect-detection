@@ -1,4 +1,4 @@
-# API contract — Wave 6 calibrated inspection
+# API contract — Wave 7 comparison consumers
 
 Base URL in local development: `http://localhost:8000`. The frontend reads `NEXT_PUBLIC_API_URL`.
 
@@ -162,7 +162,10 @@ Multipart fields: `image`, `category_id`, `model_a`, `model_b`. The two model ID
 must differ (`422` otherwise). Both category/model pairs must be installed (`501`
 otherwise), checked before scoring either. The same decoded upload is used for
 both; response is `{category_id, results: [InferenceResponse, InferenceResponse],
-request_ms}`. This is ephemeral transport, not Wave 7's saved-experiment dashboard.
+request_ms}`. Wave 7 displays these ephemeral results side by side, clears stale
+requests, and disables identical/uninstalled choices. Saved-experiment comparison
+instead reads a locally selected completed Wave 5 JSON in browser memory (16 MiB
+limit); it adds no endpoint and never sends that report to the inference API.
 
 ## `GET /api/reports/{experiment_id}`
 
