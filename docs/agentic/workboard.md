@@ -9,7 +9,7 @@
 | 4 | `tasks/wave-4-patchcore.md` | done (engineering) | Codex; independently reviewed; 213 tests pass including pretrained smoke; frozen normal-fit coreset/offline reload; real-data/CUDA/API gates open; one file per commit |
 | 5 | `tasks/wave-5-evaluation.md` | done (engineering) | Codex; independently reviewed; 281 tests pass including pretrained smoke; 68 evaluation cases; synthetic three-category experiment A; real-data/CUDA/API gates open; one file per commit |
 | 6 | `tasks/wave-6-inference-ui.md` | done (engineering) | Codex; independently reviewed; 319 Python / 4 frontend / 3 browser tests pass; calibration-bound cached serving and ephemeral PNG UI; real-data/CUDA gates open; one file per commit |
-| 7 | `tasks/wave-7-comparison.md` | proposed | Side-by-side dashboard |
+| 7 | `tasks/wave-7-comparison.md` | done (engineering) | Codex; independently reviewed; 31 frontend / 7 browser / 38 targeted API tests pass; same-upload maps and local saved metrics/category filter/CSV; real-data/CUDA open; one file per commit |
 | 8 | `tasks/wave-8-reports.md` | proposed | Reports plus experiments B and C |
 | 9 | `tasks/wave-9-ship.md` | proposed | README, demo, deploy |
 
