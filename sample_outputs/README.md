@@ -1,5 +1,6 @@
 # Sample outputs
 
-Exported heatmaps, masks, ROC figures, and report images land here during later
-waves. Generated files are gitignored. Commit only this note, plus any tiny
-synthetic fixture that a test explicitly requires.
+`scripts/render_report.py` writes protocol packages here, one directory per
+protocol id: `report.md`, `results.json`, `results.csv` and an optional
+`image_auroc.png`. Generated files are gitignored. The API reads this directory
+unless `REPORTS_ROOT` points somewhere else. Commit only this note.
