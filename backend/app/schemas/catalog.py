@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class HealthResponse(BaseModel):
@@ -45,6 +45,8 @@ class ModelCard(BaseModel):
     status: Literal["planned", "ready"]
     backbone: str | None
     description: str
+    ready_categories: list[str] = Field(default_factory=list)
+    synthetic_categories: list[str] = Field(default_factory=list)
 
 
 class ModelsResponse(BaseModel):
