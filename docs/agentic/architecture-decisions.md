@@ -139,3 +139,47 @@ chat context; implementation details belong in task cards.
   acceptance gate is open. Synthetic evidence may complete engineering work;
   real-data preparation and actual model consumers remain unverified until their
   own gates. No new package, HTTP route, training loop or model readiness change.
+
+## ADR-010 — Offline normal-only autoencoder and trusted checkpoints
+
+- **Status:** accepted
+- **Date:** 2026-10-14
+- **Dependency:** PyTorch `>=2.10,<2.11` is a separate `training` extra. CPU wheels
+  are used for local regression evidence and backend CI; the API/e2e shell does
+  not require torch. GPU users choose the official compatible CUDA wheel.
+- **Model:** Three stride-2 convolution/ReLU encoder blocks and mirrored
+  transposed-convolution decoder blocks ending in sigmoid. Channel widths live
+  in YAML. Spatial size is divisible by eight; all weights are trainable, with
+  no pretrained or frozen backbone. Input/output are BCHW RGB float32 [0,1].
+  Autoencoder-specific mean [0,0,0] and std [1,1,1] live in training defaults;
+  the model consumes the shared Wave 2 function in both fit and prediction.
+- **Fit:** Validated Wave 1 normal train/validation IDs are the only sources.
+  Each read fingerprints the exact decoded bytes; a final manifest recheck
+  rejects drift. Adam minimizes MSE. Epoch losses are sample-weighted; strict
+  validation improvement publishes the best checkpoint. Patience stops training
+  after consecutive non-improvements. Official test images/masks are never opened.
+- **Reproducibility:** Local loader generators, explicit initialization seed and
+  per-sample/per-epoch SHA-256 augmentation seeds; deterministic torch algorithms
+  with caller RNG/backend flags restored. Metadata records config hash, full
+  normal split provenance, history, library versions, device and duration. Same
+  environment reproduction is tested; cross-device/version bit identity is not promised.
+- **Artifacts:** New run directories only, under ignored repository artifact
+  roots or explicit external directories outside the dataset. Best weights and
+  loss history use atomic file replacement within the owned run. Completed weights
+  are staged, their exact checksum goes into final history, and `best.pt` is
+  published last as the readiness marker; history alone does not prove completion.
+  Internal `.tmp` staging files cannot be loaded as prepared `.pt` checkpoints.
+  Checkpoints hold
+  state_dict plus primitive metadata, not pickled modules or optimizer resume state.
+  Loading requires an explicit trusted root, refuses escaping/symlink/special
+  paths, uses CPU `weights_only=True`, validates schema/config/state and then
+  transfers the model to the requested CPU/CUDA device.
+- **Prediction:** eval plus inference_mode returns square HWC reconstruction
+  float32 [0,1], HW channel-mean squared error float32 [0,1], and its spatial mean
+  as image score. No threshold, label, original-resolution localization or severity.
+  The API catalog remains `planned`; HTTP serving and calibrated decisions are later gates.
+- **Boundary:** The user authorized Wave 3 without closing real-MVTec acceptance.
+  Engineering evidence uses synthetic images only. No dataset or checkpoint is committed.
+- **References:** [PyTorch installation](https://pytorch.org/get-started/previous-versions/),
+  [restricted loading](https://docs.pytorch.org/docs/2.10/generated/torch.load.html),
+  [reproducibility](https://docs.pytorch.org/docs/2.10/notes/randomness.html).
