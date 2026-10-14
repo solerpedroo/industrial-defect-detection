@@ -1,0 +1,14 @@
+---
+description: UI rules for the industrial anomaly inspection dashboard.
+globs: frontend/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Inspection UI
+
+- UI copy is English. The visual theme is dark with blue accents.
+- Read categories, models, and experiment protocols from the API. Do not duplicate catalog ids or hyperparameter defaults in components.
+- Anomaly scores are scores. Do not label them as physical severity or financial loss.
+- Show API errors in the page that triggered the request. Do not keep a stale map after a failed call.
+- Inference actions run when the user submits the form, not when a control changes.
+- Dataset views must surface the MVTec non-commercial license.
