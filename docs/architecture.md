@@ -1,4 +1,4 @@
-# Architecture — Wave 2 recorded preprocessing
+# Architecture — Wave 3 offline autoencoder
 
 ## Boundary map
 
@@ -7,7 +7,7 @@ Next.js UI  →  typed API client  →  FastAPI routes  →  catalogs / inferenc
                  presentation         transport            contract                      numerical logic
 ```
 
-The frontend never scores anomalies. FastAPI validates uploads, category ids, and model ids. `ml/` will own datasets, preprocessing, models, training, and metrics. Wave 0 ships the boundaries and the catalogs. Training functions raise `NotImplementedError` until their wave.
+The frontend never scores anomalies. FastAPI validates uploads, category ids, and model ids. `ml/` owns datasets, preprocessing and offline autoencoder training/prediction. PatchCore and metrics remain future work. HTTP handlers never start training.
 
 ## Components
 
@@ -19,7 +19,7 @@ There is no database. Experiment records will be YAML and JSON files.
 
 ## Image convention
 
-Per ADR-004, decoded color images are contiguous RGB `numpy.ndarray` values with shape `(height, width, 3)`, `uint8`, range `[0, 255]`. Alpha is discarded at decode. Wave 2 creates normalized CHW float32 arrays inside `ml/preprocessing/`; PyTorch tensor conversion belongs to the Wave 3 model boundary.
+Per ADR-004, decoded color images are contiguous RGB `numpy.ndarray` values with shape `(height, width, 3)`, `uint8`, range `[0, 255]`. Alpha is discarded at decode. Shared preprocessing creates CHW float32 arrays. Wave 3 converts them to PyTorch at the autoencoder boundary using model-specific unit-interval normalization.
 
 ## Catalogs
 
@@ -121,14 +121,70 @@ from ml.preprocessing import apply_preprocess, load_preprocess_config
 
 config = load_preprocess_config("bottle")
 result = apply_preprocess(rgb_uint8, config, stage="inference")
-model_input = result.model_input  # torch.from_numpy conversion arrives in Wave 3.
+model_input = result.model_input  # Model boundaries call torch.from_numpy.
 metadata = result.record         # Persist beside experiment/checkpoint artifacts.
 ```
 
-The shared train/inference stage paths have synthetic and upload-decoder
-integration evidence. Actual model consumers are not implemented yet. The user
-authorized Wave 2 engineering while the licensed real-MVTec gate remains open;
-this does not certify real-data preparation or model behavior.
+The shared paths have synthetic and upload-decoder integration evidence. Wave 3
+adds actual offline autoencoder training and prediction consumers. PatchCore and
+HTTP model consumers remain unimplemented. The user authorized engineering while
+the licensed real-MVTec gate remains open; synthetic checks do not certify real
+industrial detection performance.
+
+## Offline autoencoder
+
+PyTorch 2.10 is the optional `training` extra. Importing the web application does
+not import torch. `ml/training/config.py` reads seed, batch size, epochs, patience,
+learning rate and encoder widths from the canonical YAML. Autoencoder-specific
+normalization is mean zero/std one in RGB unit-interval space, distinct from the
+unchanged ImageNet defaults for the future feature backbone. Experimental overrides
+are recorded and cannot override the canonical category flip permission in fit.
+
+`ConvolutionalAutoencoder` has three stride-2 Conv2d/ReLU blocks and three mirrored
+ConvTranspose2d blocks with a final sigmoid. Initialization is explicitly CPU
+float32, independently of caller torch defaults. All weights train; there is no
+pretrained/frozen backbone. BCHW RGB float32 [0,1] inputs need dimensions divisible
+by eight. The training square is at most 4096 and widths are integers in [1,256].
+
+`ml.training.autoencoder.train_autoencoder` loads the Wave 1 manifest, then reads
+only its retained normal fit IDs and held-out normal validation IDs. Each source
+read hashes the same bytes it decodes. Normal images pass through `apply_preprocess`
+and `torch.from_numpy`. Fit uses Adam/MSE; validation uses inference_mode and no
+augmentation. Losses are sample-weighted, including partial final batches. Strict
+validation improvement saves independent best-state snapshots; patience counts
+consecutive non-improvements. Neither fitting nor selection opens official test
+images or masks. The final manifest recheck rejects content/inventory drift.
+
+Initialization/shuffle are seeded; enabled augmentation derives seeds from the
+first four big-endian bytes of `SHA256(seed:epoch:image_id)`. Local loader generators
+and restored torch RNG/backend settings prevent leaking randomness into callers.
+Deterministic algorithms are requested, but bit identity across hardware/library
+versions is not claimed. Regression evidence is CPU only; CUDA is a supported
+device path with explicit availability validation, not a verified performance claim.
+
+Every run requires a new directory beneath ignored `checkpoints/`, `artifacts/`
+or `runs/`, or an explicit external directory outside the source dataset. Existing
+runs and tracked repository roots are rejected. Artifacts are `best.pt` and
+`history.json`. They record effective config/hashes, full normal manifest provenance,
+seed derivation, sample-weighted losses, best epoch, versions, device/hardware and
+duration. Prepared weights are staged and hashed; final history is published first,
+then completed `best.pt` last. Its complete flag is the readiness marker. On failure,
+earlier incomplete best weights may remain for diagnosis and must not be served.
+These artifacts support inference reload, not optimizer/scheduler training resume.
+
+`load_autoencoder(checkpoint, trusted_root=..., device=...)` rejects escaping,
+symlinked and special paths, temporary staging files, incomplete runs, incompatible
+schemas/config hashes or invalid weight shapes/dtypes/values. It deserializes with
+`weights_only=True` on CPU, initializes without consuming caller RNG, then transfers
+to CPU/CUDA. The caller must explicitly select a trusted artifact directory; restricted
+loading is not permission to accept uploaded checkpoints.
+
+`AutoencoderPredictor.predict(rgb_uint8)` uses the same recorded unit-interval
+pipeline, eval and inference_mode. It returns square HWC float32 reconstruction
+[0,1], HW float32 channel-mean squared RGB difference [0,1], the map's spatial mean
+as score, prepared display RGB and preprocessing provenance. These are at model
+resolution, not original-resolution localization. There is no threshold or label.
+The catalog and HTTP inference stay `planned`/501 until their serving gate.
 
 ## Inference boundary
 
@@ -142,7 +198,7 @@ Uploads are not written to disk.
 | --- | --- |
 | 1 | Implemented reader, integrity checks, normal validation manifests; real-data acceptance pending |
 | 2 | Implemented shared preprocessing, mask geometry, provenance and previews; model consumers pending |
-| 3 | PyTorch autoencoder, checkpoints, reconstruction maps |
+| 3 | Implemented offline PyTorch autoencoder, best checkpoints and reconstruction maps; CPU synthetic evidence |
 | 4 | PatchCore adapter and shared `AnomalyModel` runtime |
 | 5 | Metrics and validation thresholds |
 | 6 | Heatmap overlay and downloads in Inference Lab |
