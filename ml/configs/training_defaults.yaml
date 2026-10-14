@@ -10,6 +10,11 @@ categories:
   - leather
   - metal_nut
 autoencoder:
+  channels: [16, 32, 64]
+  normalization:
+    # Sigmoid reconstruction and MSE operate in RGB unit-interval space.
+    mean: [0.0, 0.0, 0.0]
+    std: [1.0, 1.0, 1.0]
   batch_size: 8
   max_epochs: 50
   early_stopping_patience: 10
