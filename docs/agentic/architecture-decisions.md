@@ -4,6 +4,29 @@ This log is the durable decision record for people and agents. Add an entry
 before changing a cross-cutting convention. Accepted decisions supersede informal
 chat context; implementation details belong in task cards.
 
+## ADR-015 — Offline report packages and sealed experiment B/C
+
+- **Status:** accepted
+- **Date:** 2026-10-14
+- **Decision:** Wave 8 writes report packages under `sample_outputs/<protocol_id>/`
+  (or `REPORTS_ROOT`) as `report.md`, `results.json`, `results.csv` and an
+  optional `image_auroc.png`. `GET /api/reports/{id}` reads that markdown and
+  lists PNG names. It does not train, score, calibrate or return figure bytes.
+- **Experiment B:** Noise, blur and brightness use the intensities in
+  `experiments/robustness/config.yaml`, plus an undegraded original copy.
+  The same image ids are scored in every condition. Thresholds are copied from
+  a completed experiment A report (`normal_validation`). Degraded pixels stay
+  in memory and are not written back to the dataset.
+- **Experiment C:** Subset membership for 25/50/75/100 percent and three repeats
+  is a seeded plan over normal train ids only. It is not a measured AUROC.
+  The split loader still requires the full normal inventory, so those draws
+  cannot be persisted as fit manifests. Reports say that retraining is blocked.
+- **Claims:** Packages repeat that scores, heatmaps and mask area are not
+  physical severity. A missing measurement is an explicit blocked section, not
+  a fabricated metric. Real MVTec and CUDA gates stay open.
+- **Safety:** Report ids must be catalog ids. The reader rejects symlinks and
+  paths that leave the reports root. Markdown larger than 1 MiB returns 413.
+
 ## ADR-014 — Local saved-report and live-model comparison
 
 - **Status:** accepted
