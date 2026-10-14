@@ -1,7 +1,7 @@
 # Industrial Defect Detection — Implementation Plan
 
 **Version:** 1.0  
-**Status:** Waves 1–2 engineering delivered; real-data and model-integration gates open → MVP
+**Status:** Waves 1–3 engineering delivered; real-data, CUDA and HTTP-serving gates open → MVP
 **Scope reference:** [project-scope.md](./project-scope.md)
 
 ---
@@ -28,6 +28,9 @@ Waves are sequential gates. The next wave starts when the previous Definition of
 On 2026-10-14 the user explicitly authorized Wave 2 engineering using synthetic
 data while Wave 1 real-MVTec acceptance remains open. This exception does not
 close the real-data gate or imply model readiness; see ADR-009 and the task card.
+The user subsequently authorized Wave 3. Offline Autoencoder fit/reload has
+synthetic CPU evidence; licensed MVTec, CUDA, calibrated thresholds and HTTP
+serving remain pending. ADR-010 defines this bounded extension.
 
 ```mermaid
 flowchart LR
@@ -144,6 +147,11 @@ Limits: PNG or JPEG, 10 MiB, 4096 × 4096. Bytes exist only for the request.
 ### 5.5 Dependencies by wave
 
 Wave 0 installs FastAPI, NumPy, Pillow, and PyYAML. PyTorch arrives in Wave 3. Anomalib arrives in Wave 4. Do not add those packages early.
+
+Wave 3 uses the optional `backend[training]` extra (`torch>=2.10,<2.11`). Backend
+CI installs the official CPU wheel and `backend[dev,training]` for numerical
+regressions. API-only/e2e installation stays lightweight. See README for CPU
+installation and the offline CLI. Do not label a local checkpoint as API-ready.
 
 ## 6. Wave 0 definition of done
 
