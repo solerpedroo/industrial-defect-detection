@@ -2,6 +2,13 @@
 
 The MVP is **not** complete. Wave 0 establishes the repository. Check these items only when the named wave has evidence.
 
+Wave 1 code is implemented and independently reviewed with 72 Python tests,
+3 frontend unit tests and 1 browser flow passing. Its normal-only split protocol
+has synthetic evidence, including all three category IDs. A licensed local MVTec
+copy is absent, so the two real-data acceptance items below remain open. See the
+[`Wave 1 task card`](agentic/tasks/wave-1-dataset.md) and
+[`real-data handoff`](agentic/handoffs/2026-10-14-wave-1-dataset.md).
+
 | Criterion | Wave | Status |
 | --- | --- | --- |
 | Monorepo, catalogs, API shell, dashboard shell, CI | 0 | done |
