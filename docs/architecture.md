@@ -393,6 +393,15 @@ blocked and does not invent AUROC.
 Packages always say that scores and mask area are not physical severity.
 Missing measurements use an explicit blocked section.
 
+## Wave 9 ship boundary
+
+ADR-016 keeps MVTec images and checkpoints out of Git and out of
+`backend/Dockerfile`. The README sequences local training, experiment A,
+report packages, and optional HTTP serving. `docs/deploy.md` describes Vercel
+and Railway for the catalog UI and API. `docs/demo-storyboard.md` limits what
+a short recording may show. None of these artifacts close real-data or CUDA
+acceptance.
+
 ## What each wave adds
 
 | Wave | Addition |
@@ -405,4 +414,4 @@ Missing measurements use an explicit blocked section.
 | 6 | Implemented trusted calibrated HTTP serving, heatmap/overlay/mask/reconstruction and downloads; synthetic real-model browser evidence |
 | 7 | Implemented same-upload model comparison and local saved metrics/category filter/CSV; synthetic browser evidence |
 | 8 | Report packages, frozen-threshold experiment B scoring, and an experiment C membership plan; subset retraining blocked |
-| 9 | Deploy, demo, acceptance evidence |
+| 9 | README reproduction path, dataset-free deploy notes, demo storyboard; real-data and CUDA gates stay open |
