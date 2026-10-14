@@ -1,0 +1,15 @@
+---
+description: Numerical rules for datasets, models, and evaluation.
+globs: ml/**/*.py
+alwaysApply: false
+---
+
+# ML pipeline
+
+- `ml/` does not import FastAPI, HTTP clients, or React.
+- Fit models on normal images only. Read anomalous images and masks in evaluation code.
+- Choose thresholds from the validation split. Do not peek at the official test split to set them.
+- Document tensor layout, spatial size, normalization, and map range on every public model function.
+- Reconstruction error and feature distance are different quantities. Do not mix their scales without a written calibration.
+- Training writes checkpoints outside Git. Record seed, config, and library versions beside the artifact.
+- Raise `NotImplementedError` until the owning wave implements the function. Do not return fake metrics.
