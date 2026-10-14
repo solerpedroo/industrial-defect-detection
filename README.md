@@ -5,12 +5,16 @@ images: a convolutional autoencoder and PatchCore, pixel-level localization,
 and reproducible comparisons on MVTec AD.
 
 **Stack:** Next.js (TypeScript) · FastAPI · PyTorch (from Wave 3) · Anomalib (from Wave 4)  
-**Status:** Wave 0 complete. Training and live heatmaps start in later waves. See [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md).
+**Status:** Wave 1 dataset pipeline implemented and tested on synthetic trees.
+Real MVTec preparation is pending. Training and live heatmaps start in later
+waves. See [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md).
 
 ## What this repository does today
 
 - Catalogs Bottle, Leather, and Metal Nut plus the two model families
-- Reads a local MVTec tree when you place it in `data/mvtec-ad/`
+- Audits local MVTec images, mask pairs, corrupt files and duplicate content
+- Creates reproducible normal-only validation manifests with source checksums
+- Shows fit, validation, test and mask counts plus split validity in Datasets
 - Validates inspection uploads and reports that no checkpoint is ready yet
 - Dashboard pages: Overview, Datasets, Inference Lab, Experiments, Comparison
 
@@ -58,12 +62,18 @@ extract it to `data/mvtec-ad/`, then run:
 
 ```bash
 .venv/bin/python scripts/validate_dataset.py
+.venv/bin/python scripts/validate_dataset.py --create-split --validation-fraction 0.2
 ```
+
+The audit returns a nonzero exit for missing/invalid data. The fraction is an
+explicit experiment choice; the seed comes from the YAML training defaults.
+Manifests are gitignored under `ml/data/splits/`. Existing manifests require
+`--overwrite` to replace, and changed training files invalidate the split.
 
 ## Quality checks
 
 ```bash
-.venv/bin/ruff check backend
+.venv/bin/ruff check --config backend/pyproject.toml backend ml scripts
 .venv/bin/pytest backend
 cd frontend && npm run lint && npm run test && npm run build
 cd frontend && npx playwright install chromium && npm run test:e2e
