@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from os import getenv
 from pathlib import Path
 
+from app.core.paths import repo_root
+
 
 @dataclass(frozen=True)
 class Settings:
@@ -10,6 +12,14 @@ class Settings:
     allowed_origins: tuple[str, ...]
     inference_manifest: Path | None = None
     allow_synthetic_inference: bool = False
+
+
+def reports_root() -> Path:
+    """Directory of generated report packages. Read on each request."""
+    raw = getenv("REPORTS_ROOT")
+    if raw:
+        return Path(raw)
+    return repo_root() / "sample_outputs"
 
 
 def get_settings() -> Settings:
