@@ -1,1 +1,85 @@
-# industrial-defect-detection
+# Industrial Defect Detection
+
+Inspection system for **unsupervised visual anomaly detection** on industrial
+images: a convolutional autoencoder and PatchCore, pixel-level localization,
+and reproducible comparisons on MVTec AD.
+
+**Stack:** Next.js (TypeScript) · FastAPI · PyTorch (from Wave 3) · Anomalib (from Wave 4)  
+**Status:** Wave 0 complete. Training and live heatmaps start in later waves. See [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md).
+
+## What this repository does today
+
+- Catalogs Bottle, Leather, and Metal Nut plus the two model families
+- Reads a local MVTec tree when you place it in `data/mvtec-ad/`
+- Validates inspection uploads and reports that no checkpoint is ready yet
+- Dashboard pages: Overview, Datasets, Inference Lab, Experiments, Comparison
+
+Training does not run inside the API. Measured metrics, heatmaps, and reports
+arrive in later waves. Protocols A, B, and C are specified under [`experiments/`](experiments/README.md).
+
+## Architecture
+
+```text
+Browser (Next.js)  →  /api/*  →  FastAPI  →  YAML catalogs
+                                      ↓
+                               ml/  (datasets, models, metrics — offline)
+```
+
+Details: [`docs/architecture.md`](docs/architecture.md) · API: [`docs/api-contract.md`](docs/api-contract.md)
+
+## Quick start
+
+**Requirements:** Python 3.11+, Node 24+
+
+```bash
+python -m venv .venv
+.venv/bin/python -m pip install -e "./backend[dev]"
+
+# Terminal 1 — API
+.venv/bin/uvicorn app.main:app --app-dir backend --reload --port 8000
+
+# Terminal 2 — UI
+cd frontend
+cp .env.example .env.local
+npm ci
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+Optional API container:
+
+```bash
+docker compose up --build
+```
+
+MVTec AD is CC BY-NC-SA 4.0 and is not included. Download it separately and
+extract it to `data/mvtec-ad/`, then run:
+
+```bash
+.venv/bin/python scripts/validate_dataset.py
+```
+
+## Quality checks
+
+```bash
+.venv/bin/ruff check backend
+.venv/bin/pytest backend
+cd frontend && npm run lint && npm run test && npm run build
+cd frontend && npx playwright install chromium && npm run test:e2e
+```
+
+## Documentation map
+
+| Document | Purpose |
+| --- | --- |
+| [`docs/project-scope.md`](docs/project-scope.md) | Product and scientific scope |
+| [`docs/implementation-plan.md`](docs/implementation-plan.md) | Delivery waves |
+| [`docs/adding-a-model.md`](docs/adding-a-model.md) | How a later algorithm lands |
+| [`docs/deploy.md`](docs/deploy.md) | Vercel + Railway |
+| [`AGENTS.md`](AGENTS.md) | Multi-agent development protocol |
+
+## License
+
+Project code is for portfolio and academic use. MVTec AD stays under its own
+non-commercial license and must not be redistributed from this repository.
