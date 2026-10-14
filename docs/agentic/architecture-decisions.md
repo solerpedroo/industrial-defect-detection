@@ -4,6 +4,31 @@ This log is the durable decision record for people and agents. Add an entry
 before changing a cross-cutting convention. Accepted decisions supersede informal
 chat context; implementation details belong in task cards.
 
+## ADR-014 — Local saved-report and live-model comparison
+
+- **Status:** accepted
+- **Date:** 2026-10-14
+- **Scope:** User authorized Wave 7 engineering; no new endpoint or dependency.
+  The existing compare endpoint serves two installed distinct models on one upload.
+  The UI consumes catalogs and clears/aborts obsolete or failed requests.
+- **Saved reports:** Explicit local selection of Wave 5 `results.json` (up to
+  16 MiB), held only in browser memory. Validate completed schema/phase, catalog
+  membership, row coverage, numbers/null reasons, calibration source and identical
+  per-category test IDs/labels before displaying. Preserve recorded hashes and
+  provenance; structural checks do not authenticate a report or recompute metrics.
+  No local paths, filesystem API, persistence or report upload endpoint.
+- **Interpretation:** Compare model columns within one run and category only.
+  Display test split, synthetic/partial scope, resolution, seed, hashes, timing
+  and approximate-memory conventions. Saved metrics do not describe a live upload
+  or necessarily the currently installed checkpoints. Raw scores and heat colors
+  remain model-specific; do not rank them on a shared numerical scale.
+- **Export:** Client CSV contains the visible category's recorded values, explicit
+  null reasons and provenance. Quote/escape fields and neutralize spreadsheet
+  formula prefixes. Never export invented zeros for undefined metrics.
+- **Boundary:** Real MVTec experiment A, CUDA, experiment B/C and report generation
+  remain separate gates. Browser fixtures use generated synthetic real-model
+  reports, not fabricated benchmark claims.
+
 ## ADR-001 — Agentic foundation precedes model training
 
 - **Status:** accepted
