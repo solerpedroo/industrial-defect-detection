@@ -2,16 +2,20 @@
 
 ## Current boundary
 
-**Waves 1–4 engineering is implemented; real-data acceptance remains open.**
-The user authorized continuation with synthetic evidence (ADR-009/010/011).
-Wave 5 is the next planned task. Before real-data training, audit the licensed
+**Waves 1–5 engineering is implemented; real-data acceptance remains open.**
+The user authorized continuation with synthetic evidence (ADR-009 through ADR-012).
+Wave 6 is the next planned task. Before real-data training, audit the licensed
 local MVTec copy and create normal-only manifests. Offline Autoencoder fitting
 and checkpoint prediction are implemented with CPU synthetic evidence.
 Frozen pretrained PatchCore memory and trusted offline reload are also implemented;
 see `docs/agentic/handoffs/2026-10-14-wave-4-patchcore.md` for provenance,
 family-specific raw score scales and pending acceptance context.
-Calibrated metrics and HTTP model inference are not implemented yet; both catalog
-models stay `planned`. Read [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md)
+Offline normal-validation calibration, image/pixel metrics and experiment A
+JSON/CSV reporting are implemented with synthetic CPU evidence. All thresholds
+freeze before test reads; real-MVTec experiment A is still open. See
+`docs/agentic/handoffs/2026-10-14-wave-5-evaluation.md` for metric conventions,
+compute limitations and serving prerequisites. HTTP model inference is not yet
+implemented; both catalog models stay `planned`. Read [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md)
 before treating any module as done. Status lives in [`docs/agentic/workboard.md`](docs/agentic/workboard.md).
 
 ## Start protocol
