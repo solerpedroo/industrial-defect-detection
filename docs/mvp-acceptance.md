@@ -12,18 +12,24 @@ copy is absent, so the two real-data acceptance items below remain open. See the
 Wave 2 engineering is implemented and reviewed: the full Python suite has
 121 passing tests, including 49 preprocessing cases. The user authorized this
 synthetic-data continuation while real-MVTec preparation remains open. A shared
-stage-aware function and upload-decoder compatibility are verified; actual model
-training/inference consumers will be integrated in Waves 3/4. The preprocessing
-MVP criterion therefore remains pending integration, rather than claiming model
-behavior. See [`Wave 2 evidence`](agentic/tasks/wave-2-preprocessing.md).
+stage-aware function and upload-decoder compatibility are verified. Wave 3 now
+adds Autoencoder consumers; full integration still awaits PatchCore and HTTP
+serving. See [`Wave 2 evidence`](agentic/tasks/wave-2-preprocessing.md).
+
+Wave 3 integrates the shared pipeline into offline Autoencoder fitting and
+prediction, with 170 Python tests passing (49 new model/training cases). It
+implements normal-only Adam/MSE, early stopping, trusted best-checkpoint reload
+and reconstruction maps. Evidence is synthetic CPU only; real-MVTec preparation,
+CUDA and API serving remain open. Both model catalog entries remain `planned`.
+See [`Wave 3 evidence`](agentic/tasks/wave-3-autoencoder.md).
 
 | Criterion | Wave | Status |
 | --- | --- | --- |
 | Monorepo, catalogs, API shell, dashboard shell, CI | 0 | done |
 | Bottle, Leather, and Metal Nut prepared locally | 1 | open |
 | Train, validation, and official test isolated | 1 | open |
-| Recorded preprocessing shared by train and inference | 2 | implemented; model consumers pending |
-| Autoencoder trains and writes reconstruction maps | 3 | open |
+| Recorded preprocessing shared by train and inference | 2 | Autoencoder integrated; PatchCore/HTTP pending |
+| Autoencoder trains and writes reconstruction maps | 3 | implemented; real-data acceptance open |
 | PatchCore builds a memory and writes anomaly maps | 4 | open |
 | Image-level and pixel-level metrics | 5 | open |
 | Thresholds chosen without the official test split | 5 | open |
