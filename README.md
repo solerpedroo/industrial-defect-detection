@@ -5,7 +5,7 @@ images: a convolutional autoencoder and PatchCore, pixel-level localization,
 and reproducible comparisons on MVTec AD.
 
 **Stack:** Next.js (TypeScript) · FastAPI · PyTorch (from Wave 3) · Anomalib (from Wave 4)  
-**Status:** Waves 1–4 data, preprocessing, offline Autoencoder and PatchCore implemented with synthetic CPU tests.
+**Status:** Waves 1–5 data, preprocessing, offline models and evaluation implemented with synthetic CPU tests.
 Real MVTec preparation and live HTTP heatmaps are pending. See [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md).
 
 ## What this repository does today
@@ -20,11 +20,14 @@ Real MVTec preparation and live HTTP heatmaps are pending. See [`docs/mvp-accept
 - Reloads trusted best checkpoints to produce reconstructions and error maps
 - Builds frozen pretrained ResNet-18 PatchCore coresets from normal fit images
 - Reloads self-contained PatchCore artifacts offline to produce raw scores/maps
+- Freezes normal-validation thresholds before any official test evaluation
+- Exports image/pixel metrics and documented compute measurements as JSON/CSV
 - Validates inspection uploads and reports that no checkpoint is ready yet
 - Dashboard pages: Overview, Datasets, Inference Lab, Experiments, Comparison
 
-Training does not run inside the API. Measured metrics, web heatmaps, and reports
-arrive in later waves. Protocols A, B, and C are specified under [`experiments/`](experiments/README.md).
+Training does not run inside the API. Offline experiment A is runnable; real-MVTec
+results, web heatmaps and presentation reports remain pending. Protocols A, B, and
+C are specified under [`experiments/`](experiments/README.md).
 
 ## Architecture
 
@@ -114,8 +117,9 @@ reconstruction = prediction.reconstruction  # HWC float32 [0,1], at model resolu
 error_map = prediction.anomaly_map          # HW channel-mean squared RGB error.
 ```
 
-The score is the map's spatial mean. No defect decision is made before Wave 5
-calibrates a threshold on validation data. The web catalog remains `planned`.
+The score is the map's spatial mean. Bare prediction makes no defect decision;
+offline evaluation below calibrates a threshold on normal validation data.
+The web catalog remains `planned`.
 
 ## Offline PatchCore
 
@@ -159,10 +163,55 @@ anomaly_map = prediction.anomaly_map  # Square HW float32 at model resolution.
 
 Both predictors implement `ml.models.AnomalyPredictor` and return an
 `AnomalyPrediction`. PatchCore distances are unbounded and are not numerically
-comparable to Autoencoder MSE. There is no calibrated threshold or defect label.
+comparable to Autoencoder MSE. Bare prediction attaches no threshold or defect label.
 Only load locally trusted artifacts, never uploaded checkpoints. Synthetic CPU
 tests include a real pretrained smoke, not real-MVTec or CUDA acceptance.
 Upstream TorchScript/Python 3.14 and deprecated-import warnings remain visible.
+
+## Offline evaluation — experiment A
+
+First prepare audited normal split manifests and both completed model artifacts.
+All requested categories/models calibrate on held-out normals before any test
+audit or decoding. Defaults live in `experiments/autoencoder-vs-patchcore/config.yaml`:
+image FPR target 0.05, pixel FPR target 0.01, higher quantiles and strict `>`
+decisions. These are empirical calibration targets, not guaranteed population
+false-positive rates. Small validation sets give coarse operating points.
+
+For a single-category partial run:
+
+```bash
+.venv/bin/python scripts/evaluate_experiment.py --category bottle --data-kind mvtec_ad \
+  --autoencoder bottle=checkpoints/bottle-ae-001/best.pt \
+  --patchcore bottle=checkpoints/bottle-patchcore-001/memory.pt \
+  --output-dir runs/experiment-a-bottle-001
+```
+
+Omit `--category` and repeat both artifact arguments for Leather and Metal Nut
+to cover the full three-category protocol. Each explicitly supplied checkpoint
+directory is locally trusted; never use uploaded checkpoints. `--data-kind`
+declares `mvtec_ad` or `synthetic`. Real experiment A refuses random PatchCore
+weights. `--protocol` accepts an explicit experiment A YAML override; changes
+are hashed/recorded and must be fixed before reporting on official test data.
+`--dataset-root`, `--manifest-dir` and `--device` support local alternatives.
+
+Artifacts must match category, normal split/checksums, experiment seed, resolution
+and inference geometry. Test IDs are shared; masks resize with nearest-neighbor
+to model resolution. Exact tied-score AUROC, non-interpolated AP (`aupr`), image
+confusion/precision/recall/F1, global pixel IoU/Dice and 8-connected AUPRO are
+reported. Undefined metrics are `null` with reasons, not fake zeros.
+
+A new ignored/external run writes `calibration.json` before test reads, then
+`results.csv` and completed `results.json` last. CSV alone is not completion.
+Reports include raw image scores, thresholds, source/artifact hashes, config,
+versions and hardware, without image/map payloads. Warmed prediction timing
+includes preprocessing/output copy, excludes file decode/model load; CUDA is
+synchronized. CPU peak memory is process-lifetime high-water RSS, not isolated
+model allocation. Autoencoder prepare time uses checkpoint-bound `history.json`;
+when absent it is explicitly unknown. Pixel budgets fail rather than subsample.
+
+Only synthetic CPU experiment evidence is available today. The real licensed
+MVTec experiment, CUDA timing and HTTP serving remain acceptance gates. See
+[`experiment A`](experiments/autoencoder-vs-patchcore/README.md).
 
 ## Quality checks
 
