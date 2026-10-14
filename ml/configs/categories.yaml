@@ -1,0 +1,21 @@
+dataset:
+  id: mvtec_ad
+  name: MVTec AD
+  license: CC BY-NC-SA 4.0
+  license_url: https://www.mvtec.com/research-teaching/datasets/mvtec-ad
+  commercial_use: false
+  storage_root: data/mvtec-ad
+
+categories:
+  - id: bottle
+    name: Bottle
+    kind: object
+    purpose: Detect changes on objects with defined geometry
+  - id: leather
+    name: Leather
+    kind: texture
+    purpose: Identify defects on textures and continuous surfaces
+  - id: metal_nut
+    name: Metal Nut
+    kind: object
+    purpose: Investigate anomalies on metal parts
