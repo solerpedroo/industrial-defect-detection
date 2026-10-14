@@ -1,7 +1,7 @@
 # Industrial Defect Detection — Implementation Plan
 
 **Version:** 1.0  
-**Status:** Roadmap (Wave 0 in progress → MVP)  
+**Status:** Wave 1 implementation delivered; real-data gate open → MVP
 **Scope reference:** [project-scope.md](./project-scope.md)
 
 ---
@@ -166,7 +166,7 @@ npm run dev
 Quality:
 
 ```bash
-.venv/bin/ruff check backend
+.venv/bin/ruff check --config backend/pyproject.toml backend ml scripts
 .venv/bin/pytest backend
 cd frontend && npm run lint && npm run test && npm run build
 ```
