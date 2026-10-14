@@ -1,7 +1,7 @@
 # Industrial Defect Detection — Implementation Plan
 
 **Version:** 1.0  
-**Status:** Waves 1–4 engineering delivered; real-data, CUDA and HTTP-serving gates open → MVP
+**Status:** Waves 1–5 engineering delivered; real-data, CUDA and HTTP-serving gates open → MVP
 **Scope reference:** [project-scope.md](./project-scope.md)
 
 ---
@@ -33,7 +33,10 @@ synthetic CPU evidence; licensed MVTec, CUDA, calibrated thresholds and HTTP
 serving remain pending. ADR-010 defines this bounded extension.
 The user then authorized Wave 4: frozen PatchCore memory and offline reload are
 implemented with synthetic CPU and actual pretrained-weight smoke evidence.
-ADR-011 preserves real-data/CUDA/serving gates; Wave 5 is next, not started here.
+ADR-011 preserves real-data/CUDA/serving gates. The user then authorized Wave 5:
+normal-validation quantiles, exact image/pixel metrics and offline experiment A
+are implemented under ADR-012. Three-category evidence is synthetic CPU; real
+experiment A remains open. Wave 6 is the next bounded task.
 
 ```mermaid
 flowchart LR
@@ -161,7 +164,9 @@ installation and the offline CLI. Do not label a local checkpoint as API-ready.
 Wave 4 adds `backend[patchcore]` with Anomalib 2.7.0, torchvision 0.25.x and timm
 1.0.x. Default CI avoids pretrained downloads; the opt-in pretrained smoke is
 recorded separately. Both offline predictors share a score/map interface, not a
-numerical score scale. Evaluation/calibration belongs exclusively to Wave 5.
+numerical score scale. Wave 5 implements evaluation/calibration using existing
+NumPy/Pillow plus lazy model imports, with no new package. All calibration records
+publish before test reads, and reports live in new ignored/external run directories.
 
 ## 6. Wave 0 definition of done
 
