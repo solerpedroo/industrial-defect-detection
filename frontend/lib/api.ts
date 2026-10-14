@@ -60,6 +60,6 @@ export function postInference(form: FormData, signal?: AbortSignal) {
   return request<InferenceResponse>("/api/inference", { method: "POST", body: form, signal });
 }
 
-export function postCompare(form: FormData) {
-  return request<CompareResponse>("/api/inference/compare", { method: "POST", body: form });
+export function postCompare(form: FormData, signal?: AbortSignal) {
+  return request<CompareResponse>("/api/inference/compare", { method: "POST", body: form, signal });
 }
