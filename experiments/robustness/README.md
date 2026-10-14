@@ -10,4 +10,7 @@ Apply each condition to the same base test images and record the transform.
 | Gaussian blur | σ = 1, 2, 3 |
 | Brightness | factors 0.6, 0.8, 1.2 |
 
-Runs are produced in Wave 8.
+Runs are produced by `ml/experiments/robustness.py`. Thresholds stay the ones
+frozen on normal validation in experiment A. The original image is kept as a
+reference condition. Degraded copies are not written back to the dataset.
+Render a package with `scripts/render_report.py`.
