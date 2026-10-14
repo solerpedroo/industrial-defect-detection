@@ -60,6 +60,11 @@ def category_summary(category_id: str) -> CategorySummary | None:
     return None
 
 
+def has_category(category_id: str) -> bool:
+    """Catalog-only ID validation, without touching dataset sources during uploads."""
+    return any(item["id"] == category_id for item in _category_file()["categories"])
+
+
 def models() -> list[ModelCard]:
     return [ModelCard.model_validate(item) for item in _model_file()["models"]]
 
