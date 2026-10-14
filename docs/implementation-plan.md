@@ -1,7 +1,7 @@
 # Industrial Defect Detection — Implementation Plan
 
 **Version:** 1.0  
-**Status:** Waves 1–5 engineering delivered; real-data, CUDA and HTTP-serving gates open → MVP
+**Status:** Waves 1–6 engineering delivered; real-data and CUDA gates open → MVP
 **Scope reference:** [project-scope.md](./project-scope.md)
 
 ---
@@ -36,7 +36,10 @@ implemented with synthetic CPU and actual pretrained-weight smoke evidence.
 ADR-011 preserves real-data/CUDA/serving gates. The user then authorized Wave 5:
 normal-validation quantiles, exact image/pixel metrics and offline experiment A
 are implemented under ADR-012. Three-category evidence is synthetic CPU; real
-experiment A remains open. Wave 6 is the next bounded task.
+experiment A remains open. The user then authorized Wave 6: optional trusted
+calibration-bound HTTP serving and the upload/heatmap/mask UI are implemented
+under ADR-013. Real-model synthetic CPU browser evidence does not close real
+MVTec/CUDA gates. Wave 7 is the next bounded task.
 
 ```mermaid
 flowchart LR
@@ -135,7 +138,9 @@ Training entry points are `scripts/` and `ml/training/`. A route that starts an 
 `ml/configs/training_defaults.yaml` holds the RTX 3050 starting point.
 
 The API and the UI read these files. A model stays `planned` until the serving
-gate installs a compatible HTTP loader; an offline loader alone is insufficient.
+gate installs compatible HTTP artifacts/calibration for a category; an offline
+loader alone is insufficient. Canonical defaults remain planned, while the
+runtime API derives `ready_categories` from its startup installation.
 
 ### 5.3 Image convention
 
