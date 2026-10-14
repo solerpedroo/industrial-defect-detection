@@ -3,6 +3,8 @@ import type {
   ExperimentsResponse,
   HealthResponse,
   ModelsResponse,
+  InferenceResponse,
+  CompareResponse,
 } from "@/types/api";
 
 export type { DatasetCatalog, ExperimentProtocol, HealthResponse, ModelCard, ModelsResponse } from "@/types/api";
@@ -54,10 +56,10 @@ export function getExperiments() {
   return request<ExperimentsResponse>("/api/experiments");
 }
 
-export function postInference(form: FormData) {
-  return request<unknown>("/api/inference", { method: "POST", body: form });
+export function postInference(form: FormData, signal?: AbortSignal) {
+  return request<InferenceResponse>("/api/inference", { method: "POST", body: form, signal });
 }
 
 export function postCompare(form: FormData) {
-  return request<unknown>("/api/inference/compare", { method: "POST", body: form });
+  return request<CompareResponse>("/api/inference/compare", { method: "POST", body: form });
 }
