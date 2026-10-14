@@ -35,6 +35,7 @@ export function DatasetBrowser() {
                 <StatGrid
                   items={[
                     { label: "Train normal", value: String(category.train_normal) },
+                    { label: "Validation normal", value: String(category.validation_normal) },
                     { label: "Test normal", value: String(category.test_normal) },
                     { label: "Test anomalous", value: String(category.test_anomalous) },
                     { label: "Masks", value: String(category.mask_count) },
@@ -43,6 +44,11 @@ export function DatasetBrowser() {
                 <p className="mt-3 text-xs text-muted-foreground">
                   Validation split: {category.validation_split.replaceAll("_", " ")}
                 </p>
+                {category.validation_split === "invalid" ? (
+                  <p role="alert" className="mt-2 text-xs text-destructive">
+                    The split manifest is invalid or training files have changed. Audit the dataset and recreate the split before training.
+                  </p>
+                ) : null}
               </FormPanel>
             ))}
           </div>
