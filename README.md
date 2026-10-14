@@ -5,8 +5,8 @@ images: a convolutional autoencoder and PatchCore, pixel-level localization,
 and reproducible comparisons on MVTec AD.
 
 **Stack:** Next.js (TypeScript) · FastAPI · PyTorch (from Wave 3) · Anomalib (from Wave 4)  
-**Status:** Waves 1–7 data, offline models/evaluation, calibrated HTTP inspection and comparison implemented with synthetic CPU tests.
-Real MVTec preparation, benchmark and CUDA acceptance remain pending. See [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md).
+**Status:** Waves 1–8 engineering is in the tree. Wave 9 documents how to reproduce it without publishing MVTec or checkpoints.
+Real MVTec preparation, the real experiment A benchmark, CUDA, and experiment C retraining remain open. See [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md).
 
 ## What this repository does today
 
@@ -26,11 +26,15 @@ Real MVTec preparation, benchmark and CUDA acceptance remain pending. See [`docs
 - Shows heatmaps, adjustable overlays, reconstruction and downloadable masks
 - Compares two installed models on one upload and opens saved experiment metrics locally
 - Filters saved comparisons by category and exports their values/provenance as CSV
+- Renders Markdown, CSV, JSON, and optional PNG report packages offline
+- Scores experiment B at frozen experiment A thresholds
+- Records an experiment C membership plan and states that retraining is blocked
 - Dashboard pages: Overview, Datasets, Inference Lab, Experiments, Comparison
 
-Training does not run inside the API. Offline experiment A is runnable; real-MVTec
-results and presentation reports remain pending. Protocols A, B, and
-C are specified under [`experiments/`](experiments/README.md).
+Training does not run inside the API. Experiment A can be measured offline.
+Experiment B scores degradations at those frozen thresholds. Experiment C
+records subset membership and states that retraining is blocked. Real-MVTec
+numbers remain pending. Protocols live under [`experiments/`](experiments/README.md).
 
 ## Architecture
 
@@ -61,6 +65,16 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+### Open the UI with both model families
+
+The commands above show catalogs before any artifact exists. To inspect with
+both families, install the CPU wheels and extras in the Offline Autoencoder and
+Offline PatchCore sections, train or reload one checkpoint per family, calibrate
+them with the experiment A commands, then start the API from Calibrated HTTP
+inference and the UI from the commands above. The API trusts only local
+checkpoints named by `INFERENCE_MANIFEST`. Synthetic checkpoints need
+`INFERENCE_ALLOW_SYNTHETIC=1` and are a demonstration, not an MVTec result.
 
 Optional API container:
 
@@ -303,7 +317,53 @@ Saved test metrics are independent of the current upload and installed model
 snapshot. Synthetic/partial reports remain explicitly labeled. Timing excludes
 file decoding/model loading; CPU peak memory is a process high-water mark, not
 isolated model usage. A report larger than the explicit limit requires a later
-pagination/serving design, not silent truncation. No reports endpoint was added.
+pagination/serving design, not silent truncation. Generated protocol packages
+are a separate artifact, described below. The comparison page does not upload them.
+
+## Report packages
+
+`scripts/render_report.py` writes `report.md`, `results.json`, `results.csv`,
+and, when the JSON contains finite image AUROC, `image_auroc.png`. The output
+directory must not already exist. Inside the repository it has to sit under
+`sample_outputs/`, `runs/`, `artifacts/`, or `checkpoints/`. Generated files
+stay gitignored. `GET /api/reports/{experiment_id}` returns the Markdown and
+PNG names from `REPORTS_ROOT` (default `sample_outputs/`). It does not train,
+score, or return figure bytes.
+
+Render a completed experiment A file:
+
+```bash
+.venv/bin/python scripts/render_report.py \
+  --protocol exp-a-autoencoder-vs-patchcore \
+  --results runs/experiment-a-bottle-001/results.json \
+  --output sample_outputs/exp-a-autoencoder-vs-patchcore
+```
+
+Experiment B does not retrain and does not retune thresholds. Scoring is
+`ml.experiments.robustness.score_degraded_split`, which copies thresholds from
+a completed experiment A report. Omitting `--results` writes a blocked package
+and does not invent AUROC:
+
+```bash
+.venv/bin/python scripts/render_report.py \
+  --protocol exp-b-robustness \
+  --output sample_outputs/exp-b-robustness
+```
+
+Experiment C writes the seeded 25/50/75/100 percent membership plan when
+`--train-ids-file` is a JSON list of normal train ids. It does not fit a model.
+The split loader still requires the full normal inventory, so the package says
+retraining is blocked:
+
+```bash
+.venv/bin/python scripts/render_report.py \
+  --protocol exp-c-dataset-size \
+  --train-ids-file runs/normal-train-ids.json \
+  --output sample_outputs/exp-c-dataset-size
+```
+
+Every package states that anomaly scores, heatmap intensity, and mask area are
+not physical severity or financial loss.
 
 ## Quality checks
 
@@ -342,7 +402,9 @@ Public API URLs are baked into a production build, not changed by `next start`.
 | [`docs/project-scope.md`](docs/project-scope.md) | Product and scientific scope |
 | [`docs/implementation-plan.md`](docs/implementation-plan.md) | Delivery waves |
 | [`docs/adding-a-model.md`](docs/adding-a-model.md) | How a later algorithm lands |
-| [`docs/deploy.md`](docs/deploy.md) | Vercel + Railway |
+| [`docs/deploy.md`](docs/deploy.md) | Vercel + Railway, without the dataset |
+| [`docs/mvp-acceptance.md`](docs/mvp-acceptance.md) | Acceptance rows and open gates |
+| [`docs/demo-storyboard.md`](docs/demo-storyboard.md) | What a short demo may show |
 | [`AGENTS.md`](AGENTS.md) | Multi-agent development protocol |
 
 ## License
