@@ -30,6 +30,7 @@ export default defineConfig({
       reuseExistingServer: !realInference && !process.env.CI,
       cwd: __dirname,
       timeout: 120_000,
+      env: { ...process.env, PLAYWRIGHT_REPORT_PATH: path.join(__dirname, ".next/e2e-results.json") },
     },
     {
       command: process.env.PLAYWRIGHT_PRODUCTION === "1"
