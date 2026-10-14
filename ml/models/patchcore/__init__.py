@@ -1,15 +1,16 @@
-"""PatchCore adapter.
+"""Frozen Anomalib PatchCore, normal-only offline memory and trusted reload."""
 
-Wave 4 wraps Anomalib. The backbone stays frozen while the normal-patch memory
-is built. This module must not import FastAPI.
-"""
+from .adapter import PatchcorePrediction, PatchcorePredictor
+from .artifact import load_patchcore
+from .build import MemoryBuildResult, build_patchcore_memory
+from .config import PatchcoreConfig, load_patchcore_config
 
-
-def build_memory(*_args: object, **_kwargs: object) -> None:
-    """Build a normal feature memory. Not available in Wave 0."""
-    raise NotImplementedError("PatchCore memory construction is implemented in Wave 4.")
-
-
-def predict(*_args: object, **_kwargs: object) -> None:
-    """Score one image against the memory. Not available in Wave 0."""
-    raise NotImplementedError("PatchCore inference is implemented in Wave 4.")
+__all__ = [
+    "MemoryBuildResult",
+    "PatchcoreConfig",
+    "PatchcorePrediction",
+    "PatchcorePredictor",
+    "build_patchcore_memory",
+    "load_patchcore",
+    "load_patchcore_config",
+]
