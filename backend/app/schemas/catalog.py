@@ -20,11 +20,12 @@ class CategorySummary(BaseModel):
     purpose: str
     availability: Literal["missing", "present"]
     train_normal: int
+    validation_normal: int
     test_normal: int
     test_anomalous: int
     mask_count: int
     defect_types: list[DefectTypeCount]
-    validation_split: Literal["not_created"]
+    validation_split: Literal["not_created", "created", "invalid"]
 
 
 class DatasetCatalogResponse(BaseModel):
