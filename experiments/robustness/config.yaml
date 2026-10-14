@@ -1,0 +1,14 @@
+protocol_id: exp-b-robustness
+seed: 42
+categories:
+  - bottle
+  - leather
+  - metal_nut
+models:
+  - autoencoder
+  - patchcore
+base_images: official test ids, identical across conditions
+degradations:
+  gaussian_noise_sigma: [10, 20, 30]
+  gaussian_blur_sigma: [1, 2, 3]
+  brightness_factors: [0.6, 0.8, 1.2]
