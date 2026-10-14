@@ -1,0 +1,12 @@
+protocol_id: exp-c-dataset-size
+seed: 42
+categories:
+  - bottle
+  - leather
+  - metal_nut
+models:
+  - autoencoder
+  - patchcore
+normal_train_fractions: [0.25, 0.5, 0.75, 1.0]
+repeats: 3
+test_split: official MVTec test, unchanged across fractions
