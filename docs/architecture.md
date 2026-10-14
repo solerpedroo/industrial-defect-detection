@@ -1,4 +1,4 @@
-# Architecture — Wave 4 offline model pair
+# Architecture — Wave 5 offline evaluation
 
 ## Boundary map
 
@@ -7,7 +7,7 @@ Next.js UI  →  typed API client  →  FastAPI routes  →  catalogs / inferenc
                  presentation         transport            contract                      numerical logic
 ```
 
-The frontend never scores anomalies. FastAPI validates uploads, category ids, and model ids. `ml/` owns datasets, preprocessing and offline Autoencoder/PatchCore fitting and prediction. Metrics remain future work. HTTP handlers never start training.
+The frontend never scores anomalies. FastAPI validates uploads, category ids, and model ids. `ml/` owns datasets, preprocessing, offline Autoencoder/PatchCore fitting/prediction and evaluation. HTTP handlers never start training.
 
 ## Components
 
@@ -245,6 +245,57 @@ loads actual pretrained weights; CI's default tests use explicit random weights
 without network retrieval. Upstream TorchScript/Python 3.14 and deprecated-import
 warnings are retained. Real-MVTec benchmark and CUDA acceptance remain open.
 
+## Validation-frozen experiment A
+
+ADR-012 defines one dependency-free NumPy metric/calibration path. Normal held-out
+image scores and pooled normal map pixels get separate higher empirical quantiles
+at `1 - target_fpr`. Decisions use strictly `>`; observed calibration exceedance,
+quantile/method, counts, source IDs/checksums and model config/artifact hashes are
+recorded. This is not a guarantee of unseen false-positive rates or independent
+pixel trials. Neither model's raw values are rescaled to another model's range.
+
+`ml.evaluation.evaluate` lazily invokes the offline experiment runner. It loads
+both trusted artifacts against the current normal manifest, category, seed,
+resolution and shared inference geometry. All requested category/model thresholds
+are frozen and written to `calibration.json` before any test inventory/audit/read.
+Only then does it audit the source, prepare identical test IDs/nearest-neighbor
+resized masks and evaluate each model. Test images/masks and model files have
+byte hashes and drift checks. Full normal split provenance remains in the report.
+
+Image AUROC uses grouped tied-score ROC trapezoids. `aupr` fields mean
+non-interpolated average precision, not trapezoidal PR area. Pixel rank metrics
+pool every evaluated model-resolution pixel; IoU/Dice use global micro counts.
+AUPRO gives equal weight to each 8-connected foreground region, pools background
+FPR, clips the curve to the configured FPR limit with linear interpolation, then
+normalizes area by that limit. Undefined denominators/classes/regions yield JSON
+null and reasons. Lossy conversion of accepted scores to float64 is rejected;
+large integer values above 2**53 cannot silently turn into ties.
+
+Protocol defaults (target FPRs, AUPRO limit, warmup, count budget) live in
+`experiments/autoencoder-vs-patchcore/config.yaml`. Config changes are hashed.
+Exact pooled metrics are bounded by an explicit per-category validation/test
+pixel count, without sampling; sorting and region labeling may still consume
+substantial RAM/time. Count budget is not a resource-capacity guarantee.
+
+Timing warms up on a normal validation image, synchronizes CUDA around each
+prediction and excludes model load/file decode. It includes preprocessing and
+output validation/copy. Reports include mean/median/p95, per-image latency,
+throughput, artifact bytes, preparation duration and environment. CPU peak is
+approximate process-lifetime high-water RSS, not per-model consumption. CUDA
+peak is allocator memory including the loaded model, not whole-device usage.
+Autoencoder duration comes from a complete `history.json` bound to checkpoint
+SHA/config/split; absence yields an explicit unknown, invalid/drifted history
+fails. PatchCore duration lives inside its hashed checkpoint metadata.
+
+Runs require a new ignored/external directory outside the dataset. Frozen
+calibration is incomplete by design; CSV publishes before completed JSON, the
+final completion marker. Reports contain numbers/IDs/hashes, not image payloads.
+`data_kind` explicitly declares synthetic or MVTec; real experiment A rejects
+random PatchCore weights. Category coverage is marked partial/complete independent
+of requested ordering, while all overrides remain recorded. Synthetic three-
+category CPU tests are engineering evidence, not real-MVTec benchmark results.
+No calibrated HTTP loader, UI heatmap or catalog readiness is added here.
+
 ## Inference boundary
 
 `POST /api/inference` and `POST /api/inference/compare` accept multipart PNG or JPEG uploads. They reject unknown categories and models with `422`, invalid images with `400`, `413`, or `415`, and ready-looking calls with `501` until a wave marks the model `ready` and installs a loader.
@@ -259,7 +310,7 @@ Uploads are not written to disk.
 | 2 | Implemented shared preprocessing, mask geometry, provenance and previews; model consumers pending |
 | 3 | Implemented offline PyTorch autoencoder, best checkpoints and reconstruction maps; CPU synthetic evidence |
 | 4 | Implemented frozen PatchCore adapter, memory artifacts and shared `AnomalyPredictor`; CPU synthetic/pretrained smoke evidence |
-| 5 | Metrics and validation thresholds |
+| 5 | Implemented exact metrics, normal-validation thresholds and offline JSON/CSV experiment A; real-MVTec benchmark pending |
 | 6 | Heatmap overlay and downloads in Inference Lab |
 | 7 | Comparison of saved experiment artifacts |
 | 8 | Report export and experiments B and C |
